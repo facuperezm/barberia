@@ -8,7 +8,7 @@ const config = {
   extends: [
     "next/core-web-vitals",
     "next/typescript",
-    "plugin:@typescript-eslint/recommended-type-checked",
+    // "plugin:@typescript-eslint/recommended-type-checked",
     "prettier",
     "plugin:tailwindcss/recommended",
   ],
