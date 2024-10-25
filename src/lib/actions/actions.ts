@@ -1,12 +1,10 @@
 "use server";
 
-import { db } from "@/db";
 import {
   reservations,
   adminUsers,
   schedule,
   services,
-  employeeSchedules,
   employees,
 } from "@/db/schema";
 import { eq, and, gte, lte } from "drizzle-orm";
@@ -92,7 +90,7 @@ export async function updateServices(
         .set({
           name: service.name,
           duration: service.duration,
-          price: service.price,
+          price: service.price.toString(),
         })
         .where(eq(services.id, service.id))
         .returning();
@@ -103,7 +101,7 @@ export async function updateServices(
         .values({
           name: service.name,
           duration: service.duration,
-          price: service.price,
+          price: service.price.toString(),
         })
         .returning();
       updatedServices.push(newService);
@@ -177,40 +175,74 @@ export async function getEmployeeSchedule(startDate: string, endDate: string) {
     );
 }
 
+import { db } from "@/db";
+import { employeeSchedules } from "@/db/schema";
+
 export async function updateEmployeeSchedule(scheduleData: {
   [date: string]: {
     [employeeId: string]: string[];
   };
 }) {
-  const updates = [];
+  try {
+    await db.transaction(async (trx) => {
+      const deletePromises: Promise<void>[] = [];
+      const insertPromises: Promise<void>[] = [];
 
-  for (const [date, employeeSchedules] of Object.entries(scheduleData)) {
-    for (const [employeeId, timeSlots] of Object.entries(employeeSchedules)) {
-      // First, remove all existing schedules for this employee and date
-      await db
-        .delete(employeeSchedules)
-        .where(
-          and(
-            eq(employeeSchedules.employeeId, parseInt(employeeId)),
-            eq(employeeSchedules.date, date),
-          ),
-        );
+      for (const [date, employeeTimeSlots] of Object.entries(scheduleData)) {
+        for (const [employeeId, timeSlots] of Object.entries(
+          employeeTimeSlots,
+        )) {
+          const parsedEmployeeId = parseInt(employeeId, 10);
 
-      // Then, insert the new schedules
-      const newSchedules = timeSlots.map((timeSlot) => ({
-        employeeId: parseInt(employeeId),
-        date,
-        timeSlot,
-        isAvailable: true,
-      }));
+          // Validate employeeId
+          if (isNaN(parsedEmployeeId)) {
+            throw new Error(`Invalid employee ID: ${employeeId}`);
+          }
 
-      updates.push(db.insert(employeeSchedules).values(newSchedules));
-    }
+          // Delete existing schedules for the employee on the specified date
+          const deletePromise = trx
+            .delete(employeeSchedules)
+            .where(
+              and(
+                eq(employeeSchedules.employeeId, parsedEmployeeId),
+                eq(employeeSchedules.date, date),
+              ),
+            )
+            .execute()
+            .then(() => {}); // Ensure it resolves to void
+
+          deletePromises.push(deletePromise);
+
+          // Prepare new schedules
+          const newSchedules = timeSlots.map((timeSlot) => ({
+            employeeId: parsedEmployeeId,
+            date,
+            timeSlot,
+            isAvailable: true,
+          }));
+
+          // Insert new schedules if there are any time slots
+          if (newSchedules.length > 0) {
+            const insertPromise = trx
+              .insert(employeeSchedules)
+              .values(newSchedules)
+              .execute()
+              .then(() => {}); // Ensure it resolves to void
+
+            insertPromises.push(insertPromise);
+          }
+        }
+      }
+
+      // Execute all delete and insert operations concurrently within the transaction
+      await Promise.all([...deletePromises, ...insertPromises]);
+    });
+
+    return { success: true, message: "Schedule updated successfully" };
+  } catch (error) {
+    console.error("Error updating employee schedules:", error);
+    throw new Error("Failed to update employee schedules.");
   }
-
-  await Promise.all(updates);
-
-  return { success: true, message: "Schedule updated successfully" };
 }
 
 export async function getEmployees() {

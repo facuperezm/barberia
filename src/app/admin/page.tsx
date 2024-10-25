@@ -16,6 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 
 type Service = {
   id: string;
@@ -60,7 +61,7 @@ const timeSlots = [
   "17:00",
 ];
 
-export function ServiceManager() {
+export default function ServiceManager() {
   const [services, setServices] = useState<Service[]>(initialServices);
   const [newService, setNewService] = useState<Omit<Service, "id">>({
     name: "",
@@ -76,6 +77,7 @@ export function ServiceManager() {
   const [currentWeek, setCurrentWeek] = useState<Date>(new Date());
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
 
+  const { toast } = useToast();
   const handleServiceChange = (
     id: string,
     field: keyof Service,

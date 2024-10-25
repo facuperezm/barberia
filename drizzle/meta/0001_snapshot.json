@@ -41,9 +41,7 @@
         "admin_users_username_unique": {
           "name": "admin_users_username_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "username"
-          ]
+          "columns": ["username"]
         }
       },
       "checkConstraints": {}
@@ -103,12 +101,8 @@
           "name": "employee_schedules_employee_id_employees_id_fk",
           "tableFrom": "employee_schedules",
           "tableTo": "employees",
-          "columnsFrom": [
-            "employee_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["employee_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -312,12 +306,8 @@
           "name": "sessions_user_id_admin_users_id_fk",
           "tableFrom": "sessions",
           "tableTo": "admin_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }

@@ -41,9 +41,7 @@
         "admin_users_username_unique": {
           "name": "admin_users_username_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "username"
-          ]
+          "columns": ["username"]
         }
       },
       "checkConstraints": {}
@@ -103,12 +101,8 @@
           "name": "employee_schedules_employee_id_employees_id_fk",
           "tableFrom": "employee_schedules",
           "tableTo": "employees",
-          "columnsFrom": [
-            "employee_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["employee_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
