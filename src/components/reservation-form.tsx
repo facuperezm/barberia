@@ -191,7 +191,7 @@ export function ReservationForm() {
   }
 
   const renderCalendar = () => {
-    const startDate = new Date(
+    const startDate = new Date(¬
       currentMonth.getFullYear(),
       currentMonth.getMonth(),
       1,
