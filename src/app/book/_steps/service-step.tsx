@@ -1,6 +1,6 @@
 "use client";
 
-import { useBooking } from "@/app/booking/_components/booking-provider";
+import { useBooking } from "@/app/book/_components/booking-provider";
 import { Card, CardContent } from "@/components/ui/card";
 import { Scissors } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -45,8 +45,8 @@ export function ServiceStep() {
           onClick={() => setState({ serviceId: service.id })}
         >
           <CardContent className="flex items-center gap-4 p-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-              <Scissors className="h-6 w-6 text-primary" />
+            <div className="flex size-12 items-center justify-center rounded-full bg-primary/10">
+              <Scissors className="size-6 text-primary" />
             </div>
             <div className="flex-1">
               <div className="flex items-center justify-between">

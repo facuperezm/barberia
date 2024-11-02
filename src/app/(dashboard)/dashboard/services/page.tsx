@@ -15,8 +15,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Clock, Scissors } from "lucide-react";
-import { DashboardHeader } from "@/app/admin/testing/_components/header";
-import { DashboardShell } from "@/app/admin/testing/_components/shell";
+import { DashboardHeader } from "@/app/(dashboard)/dashboard/_components/header";
+import { DashboardShell } from "@/app/(dashboard)/dashboard/_components/shell";
 
 // Fixed services with predefined durations
 const services = [

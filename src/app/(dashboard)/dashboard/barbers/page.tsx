@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { DashboardHeader } from "@/app/admin/testing/_components/header";
-import { DashboardShell } from "@/app/admin/testing/_components/shell";
+import { DashboardHeader } from "@/app/(dashboard)/dashboard/_components/header";
+import { DashboardShell } from "@/app/(dashboard)/dashboard/_components/shell";
 import { Button } from "@/components/ui/button";
 import {
   Card,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useBooking } from "@/app/booking/_components/booking-provider";
+import { useBooking } from "@/app/book/_components/booking-provider";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -23,7 +23,7 @@ export function DateTimeStep() {
     <div className="grid gap-6">
       <Calendar
         mode="single"
-        selected={state.date}
+        selected={state.date ?? undefined}
         onSelect={(date) => setState({ date })}
         className="rounded-md border"
         disabled={

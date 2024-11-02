@@ -1,6 +1,6 @@
 "use client";
 
-import { useBooking } from "@/app/booking/_components/booking-provider";
+import { useBooking } from "@/app/book/_components/booking-provider";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 

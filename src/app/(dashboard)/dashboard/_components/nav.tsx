@@ -28,6 +28,11 @@ const items = [
     icon: Users,
   },
   {
+    title: "Management",
+    href: "/dashboard/employees",
+    icon: Users,
+  },
+  {
     title: "Working Hours",
     href: "/dashboard/hours",
     icon: Clock,
@@ -58,7 +63,7 @@ export function DashboardNav() {
               "justify-start",
             )}
           >
-            <Icon className="mr-2 h-4 w-4" />
+            <Icon className="mr-2 size-4" />
             {item.title}
           </Link>
         );

@@ -1,10 +1,10 @@
 "use client";
 
-import { useBooking } from "@/app/booking/_components/booking-provider";
-import { BarberStep } from "@/app/booking/_steps/barber-step";
-import { ServiceStep } from "@/app/booking/_steps/service-step";
-import { DateTimeStep } from "@/app/booking/_steps/date-time-step";
-import { CustomerStep } from "@/app/booking/_steps/customer-step";
+import { useBooking } from "@/app/book/_components/booking-provider";
+import { BarberStep } from "@/app/book/_steps/barber-step";
+import { ServiceStep } from "@/app/book/_steps/service-step";
+import { DateTimeStep } from "@/app/book/_steps/date-time-step";
+import { CustomerStep } from "@/app/book/_steps/customer-step";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 

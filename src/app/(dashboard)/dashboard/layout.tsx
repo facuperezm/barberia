@@ -1,4 +1,4 @@
-import { DashboardNav } from "@/app/admin/testing/_components/nav";
+import { DashboardNav } from "@/app/(dashboard)/dashboard/_components/nav";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Scissors } from "lucide-react";
 

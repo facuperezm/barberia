@@ -1,6 +1,6 @@
 "use client";
 
-import { useBooking } from "@/app/booking/_components/booking-provider";
+import { useBooking } from "@/app/book/_components/booking-provider";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";

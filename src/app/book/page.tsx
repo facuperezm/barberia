@@ -1,7 +1,7 @@
 "use client";
 
-import { BookingForm } from "@/app/booking/_components/booking-form";
-import { BookingProvider } from "@/app/booking/_components/booking-provider";
+import { BookingForm } from "@/app/book/_components/booking-form";
+import { BookingProvider } from "@/app/book/_components/booking-provider";
 
 export default function BookPage() {
   return (

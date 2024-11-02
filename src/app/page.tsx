@@ -1,182 +1,176 @@
-import ReservationForm from "@/components/reservation-form";
+"use client";
+
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  Clock,
-  Facebook,
-  Instagram,
-  MapPin,
-  Phone,
-  Scissors,
-} from "lucide-react";
-import Image from "next/image";
+import { Calendar, Clock, MapPin, Scissors } from "lucide-react";
+
+const features = [
+  {
+    icon: Scissors,
+    title: "Expert Barbers",
+    description: "Our skilled team delivers precision cuts and modern styles",
+  },
+  {
+    icon: Calendar,
+    title: "Easy Booking",
+    description: "Book your appointment online in just a few clicks",
+  },
+  {
+    icon: Clock,
+    title: "Flexible Hours",
+    description: "Open 6 days a week with convenient scheduling options",
+  },
+  {
+    icon: MapPin,
+    title: "Prime Location",
+    description: "Easily accessible in the heart of downtown",
+  },
+];
+
+const services = [
+  {
+    name: "Classic Haircut",
+    price: "$30",
+    duration: "30 min",
+    image:
+      "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=800&auto=format&fit=crop&q=60",
+  },
+  {
+    name: "Beard Trim",
+    price: "$25",
+    duration: "30 min",
+    image:
+      "https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=800&auto=format&fit=crop&q=60",
+  },
+  {
+    name: "Complete Package",
+    price: "$50",
+    duration: "60 min",
+    image:
+      "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800&auto=format&fit=crop&q=60",
+  },
+];
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-b">
-      <header className="bg-black shadow-md">
-        <div className="container mx-auto flex items-center justify-between px-4 py-2">
-          <div className="flex items-center space-x-2">
-            <Scissors className="size-4 rotate-90 text-white" />
-            <span className="text-xs font-bold text-gray-500">
-              lunes a viernes de 12 a 20
-            </span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <a href="#" className="text-gray-500 hover:text-gray-800">
-              <Instagram className="size-4" />
-            </a>
-            <a href="#" className="text-gray-500 hover:text-gray-800">
-              <Facebook className="size-4" />
-            </a>
+    <div className="flex min-h-screen flex-col">
+      {/* Hero Section */}
+      <header className="relative">
+        <div className="absolute inset-0 bg-black/60" />
+        <div
+          className="h-[600px] bg-cover bg-center"
+          style={{
+            backgroundImage:
+              "url('https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=1600&auto=format&fit=crop&q=60')",
+          }}
+        >
+          <div className="container relative flex h-full flex-col items-center justify-center text-center text-white">
+            <h1 className="mb-6 text-5xl font-bold tracking-tight">
+              Modern Barbershop
+            </h1>
+            <p className="mb-8 max-w-2xl text-lg text-gray-200">
+              Experience the perfect blend of traditional craftsmanship and
+              modern style. Our expert barbers are here to help you look and
+              feel your best.
+            </p>
+            <Link href="/book">
+              <Button size="lg" className="text-lg">
+                Book Now
+              </Button>
+            </Link>
           </div>
         </div>
       </header>
-      <main>
-        <section className="relative flex h-[60vh] items-center justify-center">
-          <div className="absolute inset-0 bg-black/50">
-            <Image
-              src="https://joseppons.com/formacion/wp-content/uploads/2020/11/servicios-salon-barberia.jpeg"
-              alt="Barberia"
-              layout="fill"
-              objectFit="cover"
-              className="brightness-50 contrast-125 grayscale hue-rotate-180"
-            />
+
+      {/* Features Section */}
+      <section className="py-20">
+        <div className="container">
+          <h2 className="mb-12 text-center text-3xl font-bold">
+            Why Choose Us?
+          </h2>
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+            {features.map((feature, index) => {
+              const Icon = feature.icon;
+              return (
+                <div
+                  key={index}
+                  className="flex flex-col items-center text-center"
+                >
+                  <div className="mb-4 rounded-full bg-primary/10 p-4">
+                    <Icon className="h-8 w-8 text-primary" />
+                  </div>
+                  <h3 className="mb-2 font-semibold">{feature.title}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {feature.description}
+                  </p>
+                </div>
+              );
+            })}
           </div>
-          <div className="relative z-10 text-center">
-            <div className="mb-4 flex items-center justify-center space-x-1">
-              <Scissors className="size-10 rotate-90 text-white" />
-              <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight text-white lg:text-5xl">
-                Barberia
-              </h1>
-            </div>
-            <p className="mb-8 text-lg leading-tight text-white">
-              Expresa tu estilo con un corte de pelo profesional
+        </div>
+      </section>
+
+      {/* Services Section */}
+      <section className="bg-muted/50 py-20">
+        <div className="container">
+          <h2 className="mb-12 text-center text-3xl font-bold">Our Services</h2>
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {services.map((service, index) => (
+              <div
+                key={index}
+                className="group relative overflow-hidden rounded-lg bg-background"
+              >
+                <div className="aspect-[4/3]">
+                  <img
+                    src={service.image}
+                    alt={service.name}
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                </div>
+                <div className="p-6">
+                  <h3 className="mb-2 text-xl font-semibold">{service.name}</h3>
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-bold text-primary">
+                      {service.price}
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      {service.duration}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-12 text-center">
+            <Link href="/book">
+              <Button size="lg">Book Your Service</Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Section */}
+      <section className="py-20">
+        <div className="container">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="mb-4 text-3xl font-bold">Visit Us Today</h2>
+            <p className="mb-8 text-muted-foreground">
+              Located in downtown, our modern barbershop offers a comfortable
+              and professional environment for all your grooming needs.
             </p>
-            <Button size="lg" variant="secondary">
-              SACAR TURNO
-            </Button>
-          </div>
-        </section>
-        {/* About Section */}
-        <section id="about" className="py-16">
-          <div className="container mx-auto px-4">
-            <h2 className="mb-8 text-center text-3xl font-bold">
-              Sobre nosotros
-            </h2>
-            <div className="grid items-center gap-8 md:grid-cols-2">
-              <div>
-                <p className="mb-4 text-gray-600">
-                  Soy un barbero con más de 10 años de experiencia.
-                </p>
-                <p className="text-gray-600">
-                  Con más de 10 años de experiencia, he servido a mi comunidad
-                  con orgullo y dedicación. Ven a visitarnos y experimenta la
-                  diferencia de Barberia.
-                </p>
-              </div>
-              <div className="relative h-64 drop-shadow-xl">
-                <Image
-                  src="https://joseppons.com/formacion/wp-content/uploads/2020/11/servicios-salon-barberia.jpeg"
-                  alt="Barbershop Tools"
-                  layout="fill"
-                  objectFit="cover"
-                  className="rounded-lg"
-                />
-              </div>
+            <div className="space-y-2">
+              <p className="font-medium">123 Main Street, Downtown</p>
+              <p className="font-medium">Mon-Sat: 9:00 AM - 8:00 PM</p>
+              <p className="font-medium">Phone: (555) 123-4567</p>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Services Section */}
-        <section id="services" className="py-16">
-          <div className="container mx-auto px-4">
-            <h2 className="mb-8 text-center text-3xl font-bold">
-              Nuestros Servicios
-            </h2>
-            <div className="grid gap-8 md:grid-cols-3">
-              {[
-                {
-                  name: "Corte Clásico",
-                  price: "$25",
-                  image:
-                    "https://e00-expansion.uecdn.es/assets/multimedia/imagenes/2022/05/19/16529551622743.jpg",
-                },
-                {
-                  name: "Afeitado de Barba",
-                  price: "$15",
-                  image:
-                    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRqkrRM38jh3HglPhvkZ1P_CQx0N6Ar3V3upw&s",
-                },
-                {
-                  name: "Afeitado con Toalla Caliente",
-                  price: "$30",
-                  image:
-                    "https://www.elivelimen.com/blog/wp-content/uploads/2020/03/muselines-eliveli-men-peluqueria-barberia-donostia-060-1024x683.jpg",
-                },
-              ].map((service, index) => (
-                <Card key={index}>
-                  <CardContent className="p-0">
-                    <div className="relative h-48 w-full overflow-hidden rounded-lg">
-                      <Image
-                        src={service.image}
-                        alt={service.name}
-                        layout="fill"
-                        objectFit="cover"
-                        className="h-48 w-full object-cover"
-                      />
-                    </div>
-                    <div className="p-4">
-                      <h3 className="mb-2 text-xl font-semibold">
-                        {service.name}
-                      </h3>
-                      <p className="text-gray-600">{service.price}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Contact Section */}
-        <section id="contact" className="bg-white py-16">
-          <div className="container mx-auto px-4">
-            <h2 className="mb-8 text-center text-3xl font-bold">Contactanos</h2>
-            <div className="grid items-center gap-8 md:grid-cols-2">
-              <div className="flex flex-col justify-center space-y-4">
-                <div className="flex items-center">
-                  <MapPin className="mr-2 text-gray-600" />
-                  <span>Güemes 4552, Cdad. Autónoma de Buenos Aires</span>
-                </div>
-                <div className="flex items-center">
-                  <Phone className="mr-2 text-gray-600" />
-                  <span>+54 9 11 3456-7890</span>
-                </div>
-                <div className="flex items-center">
-                  <Clock className="mr-2 text-gray-600" />
-                  <span>Lunes a viernes de 12 a 20, domingo cerrado</span>
-                </div>
-                <div className="mt-6 flex space-x-4"></div>
-              </div>
-              <div className="h-64 md:h-auto">
-                <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3284.8763136085818!2d-58.42618038791922!3d-34.58199607284923!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95bcb58486dabbbf%3A0x298a0565be304bec!2sG%C3%BCemes%204552%2C%20C1425%20Cdad.%20Aut%C3%B3noma%20de%20Buenos%20Aires%2C%20Argentina!5e0!3m2!1sen!2sus!4v1729877988106!5m2!1sen!2sus"
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  allowFullScreen
-                  loading="lazy"
-                ></iframe>
-              </div>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      <footer className="bg-gray-800 py-8 text-white">
-        <div className="container mx-auto px-4 text-center">
-          <p>&copy; 2024 StyleCut Barbershop. All rights reserved.</p>
+      {/* Footer */}
+      <footer className="border-t py-8">
+        <div className="container text-center text-sm text-muted-foreground">
+          © {new Date().getFullYear()} Modern Barbershop. All rights reserved.
         </div>
       </footer>
     </div>
