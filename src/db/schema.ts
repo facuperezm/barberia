@@ -1,10 +1,9 @@
 import {
-  pgTable,
-  serial,
-  varchar,
-  text,
   timestamp,
+  pgTable,
+  text,
   integer,
+  serial,
   boolean,
   date,
   time,
@@ -12,88 +11,94 @@ import {
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
-// Define Appointment Status Constants
-export const AppointmentStatus = {
-  PENDING: "pending",
-  CONFIRMED: "confirmed",
-  CANCELLED: "cancelled",
-  COMPLETED: "completed",
-} as const;
-
-// Barbers Table
+// Define the barbers table with necessary constraints and indexes
 export const barbers = pgTable("barbers", {
   id: serial("id").primaryKey(),
-  name: varchar("name", { length: 255 }).notNull(),
-  email: varchar("email", { length: 255 }).notNull().unique(),
-  phone: varchar("phone", { length: 20 }),
-  imageUrl: varchar("image_url", { length: 500 }),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  phone: text("phone"),
+  imageUrl: text("image_url"),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at")
-    .defaultNow()
-    .$onUpdateFn(() => new Date()),
 });
 
-// Services Table
+// Define the services table with precise data types and constraints
 export const services = pgTable("services", {
   id: serial("id").primaryKey(),
-  name: varchar("name", { length: 255 }).notNull(),
+  name: text("name").notNull(),
   description: text("description"),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
-  duration: integer("duration").notNull(), // duration in minutes
+  duration: integer("duration").notNull(), // Duration in minutes
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at")
-    .defaultNow()
-    .$onUpdateFn(() => new Date()),
 });
 
-// Schedules Table
+// Define the schedules table with foreign key constraints and default values
 export const schedules = pgTable("schedules", {
   id: serial("id").primaryKey(),
   barberId: integer("barber_id")
-    .notNull()
-    .references(() => barbers.id, { onDelete: "cascade" }),
+    .references(() => barbers.id)
+    .notNull(),
   dayOfWeek: integer("day_of_week").notNull(), // 0-6 for Sunday-Saturday
   startTime: time("start_time").notNull(),
   endTime: time("end_time").notNull(),
   isAvailable: boolean("is_available").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at")
-    .defaultNow()
-    .$onUpdateFn(() => new Date()),
 });
 
-// Appointments Table
+// Define the appointments table with comprehensive status management
 export const appointments = pgTable("appointments", {
   id: serial("id").primaryKey(),
   barberId: integer("barber_id")
-    .notNull()
-    .references(() => barbers.id, { onDelete: "cascade" }),
+    .references(() => barbers.id)
+    .notNull(),
   serviceId: integer("service_id")
-    .notNull()
-    .references(() => services.id, { onDelete: "set null" }),
-  customerName: varchar("customer_name", { length: 255 }).notNull(),
-  customerEmail: varchar("customer_email", { length: 255 }).notNull(),
-  customerPhone: varchar("customer_phone", { length: 20 }).notNull(),
+    .references(() => services.id)
+    .notNull(),
+  customerName: text("customer_name").notNull(),
+  customerEmail: text("customer_email").notNull(),
+  customerPhone: text("customer_phone").notNull(),
   date: date("date").notNull(),
   time: time("time").notNull(),
-  status: varchar("status", { length: 20 }).default(AppointmentStatus.PENDING),
+  status: text("status").default("pending"), // Possible values: pending, confirmed, cancelled, completed
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at")
-    .defaultNow()
-    .$onUpdateFn(() => new Date()),
 });
 
-// Relations
+// Define relations for the barbers table
 export const barbersRelations = relations(barbers, ({ many }) => ({
   schedules: many(schedules),
   appointments: many(appointments),
 }));
 
+// Define relations for the services table
 export const servicesRelations = relations(services, ({ many }) => ({
   appointments: many(appointments),
 }));
 
-export const appointmentsRelations = relations(appointments, ({ one }) => ({
-  barber: one(barbers),
-  service: one(services),
+// Define relations for the schedules table
+export const schedulesRelations = relations(schedules, ({ one }) => ({
+  barber: one(barbers, {
+    fields: [schedules.barberId],
+    references: [barbers.id],
+  }),
 }));
+
+// Define relations for the appointments table
+export const appointmentsRelations = relations(appointments, ({ one }) => ({
+  barber: one(barbers, {
+    fields: [appointments.barberId],
+    references: [barbers.id],
+  }),
+  service: one(services, {
+    fields: [appointments.serviceId],
+    references: [services.id],
+  }),
+}));
+
+// Optional: Add indexes to optimize query performance
+export const indexes = {
+  barbersEmailIndex: {
+    columns: [barbers.email],
+    unique: true,
+  },
+  appointmentsStatusIndex: {
+    columns: [appointments.status],
+  },
+};

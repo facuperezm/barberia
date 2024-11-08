@@ -56,7 +56,7 @@ export function RecentBookings() {
 
   const fetchBookings = async () => {
     try {
-      const response = await fetch("/api/appointments");
+      const response = await fetch("/api/appointment");
       if (!response.ok) throw new Error("Failed to fetch bookings");
       const data = await response.json();
       setBookings(data);

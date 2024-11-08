@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { employees } from "@/db/schema";
+import { barbers } from "@/db/schema";
 import { useQuery } from "@tanstack/react-query";
 
 export interface Barber {
@@ -9,10 +9,10 @@ export interface Barber {
 }
 
 const fetchBarbers = async (): Promise<Barber[]> => {
-  const response = await db.select().from(employees);
-  return response.map((employee) => ({
-    ...employee,
-    id: employee.id.toString(),
+  const response = await db.select().from(barbers);
+  return response.map((barber) => ({
+    ...barber,
+    id: barber.id.toString(),
   }));
 };
 

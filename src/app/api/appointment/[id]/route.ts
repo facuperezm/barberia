@@ -3,11 +3,14 @@ import { NextResponse } from "next/server";
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { status } = await request.json();
-    const result = await updateAppointmentStatus(parseInt(params.id), status);
+    const result = await updateAppointmentStatus(
+      parseInt((await params).id),
+      status,
+    );
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 });

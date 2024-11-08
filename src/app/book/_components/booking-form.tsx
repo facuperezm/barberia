@@ -42,7 +42,7 @@ export function BookingForm() {
     try {
       setIsSubmitting(true);
 
-      const response = await fetch("/api/appointments", {
+      const response = await fetch("/api/appointment", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -53,8 +53,8 @@ export function BookingForm() {
           customerName: state.customerName,
           customerEmail: state.customerEmail,
           customerPhone: state.customerPhone,
-          date: state.date,
-          time: state.time,
+          date: state.date?.toISOString(),
+          time: state.time.toString(),
         }),
       });
 

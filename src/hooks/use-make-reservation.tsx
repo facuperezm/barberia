@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { reservations } from "@/db/schema";
+import { appointments } from "@/db/schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface ReservationData {
@@ -16,9 +16,13 @@ interface ReservationData {
 const makeReservation = async (
   data: ReservationData,
 ): Promise<{ success: boolean }> => {
-  await db.insert(reservations).values({
+  await db.insert(appointments).values({
     ...data,
+    barberId: Number(data.barber),
     serviceId: Number(data.service),
+    customerName: `${data.firstName} ${data.lastName}`,
+    customerEmail: data.email,
+    customerPhone: data.phone,
   });
 
   return { success: true };
@@ -27,7 +31,8 @@ const makeReservation = async (
 export const useMakeReservation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation(makeReservation, {
+  return useMutation({
+    mutationFn: makeReservation,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["availableTimes"] });
       // Optionally, invalidate other queries if necessary

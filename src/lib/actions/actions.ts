@@ -1,6 +1,18 @@
 import { db } from "@/db";
 import { appointments, barbers, services } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { z } from "zod";
+
+// Define a Zod schema for appointment validation
+const appointmentSchema = z.object({
+  barberId: z.number().int().positive(),
+  serviceId: z.number().int().positive(),
+  customerName: z.string().min(1),
+  customerEmail: z.string().email(),
+  customerPhone: z.string().min(10),
+  date: z.string(),
+  time: z.string(), // HH:mm:ss format
+});
 
 export async function createAppointment(appointmentData: {
   barberId: number;
@@ -8,20 +20,62 @@ export async function createAppointment(appointmentData: {
   customerName: string;
   customerEmail: string;
   customerPhone: string;
-  date: Date;
+  date: string;
   time: string;
 }) {
+  // Validate the input data using Zod
+  const parsedData = appointmentSchema.safeParse(appointmentData);
+  if (!parsedData.success) {
+    console.error("Validation Error:", parsedData.error.format());
+    return { success: false, error: "Invalid appointment data" };
+  }
+
   try {
+    // Ensure the barber exists
+    const barberExists = await db
+      .select()
+      .from(barbers)
+      .where(eq(barbers.id, appointmentData.barberId))
+      .limit(1);
+    // .then((res) => res.length > 0);
+    console.log(barberExists, "barberExists");
+    if (!barberExists) {
+      return { success: false, error: "Selected barber does not exist" };
+    }
+
+    // Ensure the service exists
+    const serviceExists = await db
+      .select()
+      .from(services)
+      .where(eq(services.id, appointmentData.serviceId))
+      .limit(1)
+      .then((res) => res.length > 0);
+    if (!serviceExists) {
+      return { success: false, error: "Selected service does not exist" };
+    }
+
+    // Format the date to 'YYYY-MM-DD'
+    const formattedDate = appointmentData.date.split("T")[0];
+
+    // Format the time to 'HH:mm:ss' if necessary
+    let formattedTime = appointmentData.time;
+    const timeRegex = /^([0-1]\d|2[0-3]):([0-5]\d)$/; // HH:mm format
+    if (timeRegex.test(appointmentData.time)) {
+      formattedTime = `${appointmentData.time}:00`; // Append seconds if not present
+    }
+
+    console.log(formattedDate, formattedTime);
+
     const [appointment] = await db
       .insert(appointments)
       .values({
-        barberId: appointmentData.barberId,
-        serviceId: appointmentData.serviceId,
-        customerName: appointmentData.customerName,
-        customerEmail: appointmentData.customerEmail,
-        customerPhone: appointmentData.customerPhone,
-        date: appointmentData.date.toISOString(), // Convert Date to string
-        time: appointmentData.time,
+        barberId: parsedData.data.barberId,
+        serviceId: parsedData.data.serviceId,
+        customerName: parsedData.data.customerName,
+        customerEmail: parsedData.data.customerEmail,
+        customerPhone: parsedData.data.customerPhone,
+        date: formattedDate, // Use formatted date
+        time: formattedTime, // Use formatted time
         status: "pending",
       })
       .returning();

@@ -44,7 +44,7 @@ const services = [
 ];
 
 export default function ServicesPage() {
-  const [prices, setPrices] = useState(
+  const [prices, setPrices] = useState<Record<string, number>>(
     services.reduce(
       (acc, service) => ({ ...acc, [service.id]: service.price }),
       {},
@@ -67,7 +67,7 @@ export default function ServicesPage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
-                  <Scissors className="h-5 w-5" />
+                  <Scissors className="size-5" />
                   {service.name}
                 </CardTitle>
               </div>
@@ -75,7 +75,7 @@ export default function ServicesPage() {
             <CardContent>
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4" />
+                  <Clock className="size-4" />
                   {service.duration} minutes
                 </div>
                 <div className="flex items-center justify-between">

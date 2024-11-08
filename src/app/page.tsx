@@ -97,7 +97,7 @@ export default function Home() {
                   className="flex flex-col items-center text-center"
                 >
                   <div className="mb-4 rounded-full bg-primary/10 p-4">
-                    <Icon className="h-8 w-8 text-primary" />
+                    <Icon className="size-8 text-primary" />
                   </div>
                   <h3 className="mb-2 font-semibold">{feature.title}</h3>
                   <p className="text-sm text-muted-foreground">

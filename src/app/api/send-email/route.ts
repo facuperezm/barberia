@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import AppointmentConfirmationEmail from "@/lib/emails/reservation-confirmation";
+import { env } from "@/env";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(env.NEXT_PUBLIC_RESEND_API_KEY);
 
 export async function POST(request: Request) {
   try {
     const { appointment, type } = await request.json();
 
     if (type === "confirmation") {
-      const { customerName, start, serviceId, barberId } = appointment;
+      const { customerName, start, barberId, serviceId } = appointment;
 
       // Get service and barber details (replace with your actual data fetching)
       const service = "Haircut"; // Replace with actual service name

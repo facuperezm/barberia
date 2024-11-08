@@ -56,8 +56,8 @@ const mockEmployees: Employee[] = [
 ];
 
 const statusColors = {
-  active: "success",
-  on_leave: "warning",
+  active: "default",
+  on_leave: "secondary",
   terminated: "destructive",
 } as const;
 
@@ -92,7 +92,7 @@ export function EmployeeList() {
               className="flex items-center justify-between rounded-lg border p-4"
             >
               <div className="flex items-center space-x-4">
-                <Avatar className="h-12 w-12">
+                <Avatar className="size-12">
                   <AvatarImage src={employee.imageUrl} alt={employee.name} />
                   <AvatarFallback>{employee.name[0]}</AvatarFallback>
                 </Avatar>

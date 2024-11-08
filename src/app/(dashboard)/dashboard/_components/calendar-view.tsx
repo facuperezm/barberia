@@ -1,6 +1,11 @@
 "use client";
 
-import { Calendar, dateFnsLocalizer } from "react-big-calendar";
+import {
+  Calendar,
+  dateFnsLocalizer,
+  type SlotInfo,
+  type View,
+} from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { useState } from "react";
@@ -85,7 +90,7 @@ export function CalendarView() {
   const [breaks, setBreaks] = useState<BreakPeriod[]>(defaultBreaks);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isBreakDialogOpen, setIsBreakDialogOpen] = useState(false);
-  const [selectedSlot, setSelectedSlot] = useState<any>(null);
+  const [selectedSlot, setSelectedSlot] = useState<SlotInfo | null>(null);
   const [newAppointment, setNewAppointment] = useState({
     customerName: "",
     barberId: "",
@@ -97,9 +102,9 @@ export function CalendarView() {
     end: "",
     barberId: "",
   });
-  const [view, setView] = useState("day");
+  const [view, setView] = useState<View>("day");
 
-  const handleSelectSlot = (slotInfo: any) => {
+  const handleSelectSlot = (slotInfo: SlotInfo) => {
     setSelectedSlot(slotInfo);
     setIsDialogOpen(true);
   };
@@ -184,13 +189,16 @@ export function CalendarView() {
 
   const allEvents = [...appointments, ...breaks].map((event) => ({
     ...event,
-    resourceId: event.barberId || event.resourceId,
+    resourceId: "barberId" in event ? event.barberId : event.resourceId,
   }));
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <Tabs value={view} onValueChange={setView}>
+        <Tabs
+          value={view}
+          onValueChange={(value: string) => setView(value as View)}
+        >
           <TabsList>
             <TabsTrigger value="day">Day</TabsTrigger>
             <TabsTrigger value="week">Week</TabsTrigger>
@@ -212,12 +220,12 @@ export function CalendarView() {
           onSelectSlot={handleSelectSlot}
           step={15}
           timeslots={4}
-          view={view as any}
+          view={view}
           onView={(newView) => setView(newView)}
           resources={mockBarbers}
           resourceIdAccessor="id"
           resourceTitleAccessor="name"
-          eventProp={(event: any) => ({
+          eventPropGetter={(event: Appointment | BreakPeriod) => ({
             className: event.isBreak ? "bg-gray-400" : "",
           })}
         />

@@ -1,6 +1,4 @@
 import nodemailer from "nodemailer";
-import { db } from "@/db";
-import { servicesTable, barbersTable } from "@/db/schema";
 
 interface EmailParams {
   firstName: string;

@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 interface DashboardHeaderProps {
   heading: string;
   description?: string;

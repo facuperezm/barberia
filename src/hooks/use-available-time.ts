@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { reservations } from "@/db/schema";
+import { appointments } from "@/db/schema";
 import { useQuery } from "@tanstack/react-query";
 import { eq } from "drizzle-orm";
 
@@ -13,10 +13,10 @@ const fetchAvailableTimes = async (
 ): Promise<TimeSlot[]> => {
   const response = await db
     .select()
-    .from(reservations)
+    .from(appointments)
     .where(
-      eq(reservations.date, date) &&
-        eq(reservations.serviceId, Number(barberId)),
+      eq(appointments.date, date) &&
+        eq(appointments.barberId, Number(barberId)),
     );
   if (!response.length) {
     throw new Error("Network response was not ok");

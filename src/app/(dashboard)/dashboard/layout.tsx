@@ -1,7 +1,7 @@
 import { DashboardNav } from "@/app/(dashboard)/dashboard/_components/nav";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Scissors } from "lucide-react";
-
+import Link from "next/link";
 export default function DashboardLayout({
   children,
 }: {
@@ -10,11 +10,18 @@ export default function DashboardLayout({
   return (
     <div className="flex min-h-screen flex-col">
       <div className="border-b">
-        <div className="flex h-16 items-center px-4">
-          <div className="flex items-center gap-2 font-semibold">
-            <Scissors className="h-6 w-6" />
-            <span>Modern Barbershop</span>
-          </div>
+        <div className="flex h-16 items-center justify-between px-4">
+          <Link href="/dashboard">
+            <div className="flex items-center gap-2 font-semibold">
+              <Scissors className="size-6" />
+              <span>Panel de administrador</span>
+            </div>
+          </Link>
+          <Link href="/">
+            <span className="text-sm text-muted-foreground">
+              Volver a la página principal
+            </span>
+          </Link>
         </div>
       </div>
       <div className="flex-1 items-start md:grid md:grid-cols-[220px_1fr]">
