@@ -1,5 +1,8 @@
+"use server";
+
 import { db } from "@/db";
 import { appointments, barbers, services } from "@/db/schema";
+import { type Barber } from "@/lib/types";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 
@@ -13,6 +16,38 @@ const appointmentSchema = z.object({
   date: z.string(),
   time: z.string(), // HH:mm:ss format
 });
+
+export async function addBarber(formData: FormData) {
+  const name = formData.get("name");
+  const email = formData.get("email");
+  const phone = formData.get("phone");
+  const imageUrl = formData.get("imageUrl");
+  try {
+    const newBarber = await db
+      .insert(barbers)
+      .values({
+        name: name as string,
+        email: email as string,
+        phone: phone as string,
+        imageUrl: imageUrl as string,
+      })
+      .returning();
+    return { success: true, barber: newBarber };
+  } catch (error) {
+    console.error("Error adding barber:", error);
+    return { success: false, error: "Failed to add barber" };
+  }
+}
+
+export async function deleteBarber(id: number) {
+  try {
+    await db.delete(barbers).where(eq(barbers.id, id));
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting barber:", error);
+    return { success: false, error: "Failed to delete barber" };
+  }
+}
 
 export async function createAppointment(appointmentData: {
   barberId: number;
@@ -87,13 +122,13 @@ export async function createAppointment(appointmentData: {
   }
 }
 
-export async function getBarbers() {
+export async function getBarbers(): Promise<Barber[]> {
   try {
     const allBarbers = await db.select().from(barbers);
-    return { success: true, barbers: allBarbers };
+    return allBarbers as Barber[];
   } catch (error) {
     console.error("Error fetching barbers:", error);
-    return { success: false, error: "Failed to fetch barbers" };
+    return [];
   }
 }
 

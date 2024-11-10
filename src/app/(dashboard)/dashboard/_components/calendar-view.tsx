@@ -28,6 +28,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  useAppointments,
+  useCreateAppointment,
+} from "@/hooks/use-appointments";
+import { useBreaks, useCreateBreak } from "@/hooks/use-breaks";
+import { toast } from "sonner"; // For notifications
+import { Skeleton } from "@/components/ui/skeleton";
 
 const locales = {
   "en-US": require("date-fns/locale/en-US"),
@@ -41,53 +48,37 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
-// Mock data
-const mockBarbers = [
-  { id: 1, name: "John Doe" },
-  { id: 2, name: "Jane Smith" },
-];
-
-const mockServices = [
-  { id: 1, name: "Haircut", duration: 30 },
-  { id: 2, name: "Beard Trim", duration: 20 },
-  { id: 3, name: "Full Service", duration: 60 },
-];
-
-// Break periods
-const defaultBreaks = [
-  {
-    id: "lunch",
-    title: "Lunch Break",
-    start: new Date(new Date().setHours(12, 0, 0)),
-    end: new Date(new Date().setHours(13, 0, 0)),
-    resourceId: null, // null means applies to all barbers
-    isBreak: true,
-  },
-];
-
 interface Appointment {
   id: number;
-  title: string;
-  start: Date;
-  end: Date;
+  customerName: string;
   barberId: number;
   serviceId: number;
-  customerName: string;
-  isBreak?: boolean;
+  start: string;
+  end: string;
+  service: string;
+  isBreak: false; // Add this line
 }
 
 interface BreakPeriod {
-  id: string;
+  id: number;
   title: string;
-  start: Date;
-  end: Date;
-  resourceId: number | null;
-  isBreak: boolean;
+  start: string;
+  end: string;
+  barberId?: number | null;
+  isBreak: true; // Add this line
+  resourceId?: number | null;
 }
 
+// Utility function to combine appointments and breaks
+const combineEvents = (appointments: Appointment[], breaks: BreakPeriod[]) => {
+  return [...appointments, ...breaks].map((event) => ({
+    ...event,
+    resourceId: "barberId" in event ? event.barberId : event.resourceId,
+  }));
+};
+
 export function CalendarView() {
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [breaks, setBreaks] = useState<BreakPeriod[]>(defaultBreaks);
+  const [view, setView] = useState<View>("day");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isBreakDialogOpen, setIsBreakDialogOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<SlotInfo | null>(null);
@@ -102,7 +93,14 @@ export function CalendarView() {
     end: "",
     barberId: "",
   });
-  const [view, setView] = useState<View>("day");
+
+  const { data: appointments, isLoading: isAppointmentsLoading } =
+    useAppointments();
+  const { data: breaks, isLoading: isBreaksLoading } = useBreaks();
+
+  const { mutate: createAppointment, isLoading: isCreatingAppointment } =
+    useCreateAppointment();
+  const { mutate: createBreak, isLoading: isCreatingBreak } = useCreateBreak();
 
   const handleSelectSlot = (slotInfo: SlotInfo) => {
     setSelectedSlot(slotInfo);
@@ -115,82 +113,76 @@ export function CalendarView() {
       !newAppointment.customerName ||
       !newAppointment.barberId ||
       !newAppointment.serviceId
-    )
+    ) {
+      toast.error("Please fill in all required fields.");
       return;
+    }
 
-    const service = mockServices.find(
-      (s) => s.id === parseInt(newAppointment.serviceId),
-    );
-    if (!service) return;
+    // Fetch service details (assuming services are fetched or available)
+    // For demonstration, we'll mock service duration
+    const serviceDuration = 30; // Replace with actual service duration
 
     const endTime = new Date(selectedSlot.start);
-    endTime.setMinutes(endTime.getMinutes() + service.duration);
+    endTime.setMinutes(endTime.getMinutes() + serviceDuration);
 
-    const appointment: Appointment = {
-      id: appointments.length + 1,
-      title: `${newAppointment.customerName} - ${service.name}`,
-      start: selectedSlot.start,
-      end: endTime,
-      barberId: parseInt(newAppointment.barberId),
-      serviceId: parseInt(newAppointment.serviceId),
+    const appointmentData = {
       customerName: newAppointment.customerName,
+      barberId: Number(newAppointment.barberId),
+      serviceId: Number(newAppointment.serviceId),
+      start: selectedSlot.start.toISOString(),
+      end: endTime.toISOString(),
+      service: "Service Name", // Replace with actual service name
     };
 
-    setAppointments([...appointments, appointment]);
-    setIsDialogOpen(false);
-    setNewAppointment({ customerName: "", barberId: "", serviceId: "" });
-
-    // Send appointment confirmation email
-    sendAppointmentEmail(appointment);
-  };
-
-  const handleCreateBreak = () => {
-    if (!newBreak.title || !newBreak.start || !newBreak.end) return;
-
-    const breakPeriod: BreakPeriod = {
-      id: `break-${breaks.length + 1}`,
-      title: newBreak.title,
-      start: new Date(`1970-01-01T${newBreak.start}`),
-      end: new Date(`1970-01-01T${newBreak.end}`),
-      resourceId: newBreak.barberId ? parseInt(newBreak.barberId) : null,
-      isBreak: true,
-    };
-
-    setBreaks([...breaks, breakPeriod]);
-    setIsBreakDialogOpen(false);
-    setNewBreak({
-      title: "",
-      start: "",
-      end: "",
-      barberId: "",
+    createAppointment(appointmentData, {
+      onSuccess: () => {
+        toast.success("Appointment created successfully.");
+        setIsDialogOpen(false);
+        setNewAppointment({ customerName: "", barberId: "", serviceId: "" });
+      },
+      onError: () => {
+        toast.error("Failed to create appointment.");
+      },
     });
   };
 
-  const sendAppointmentEmail = async (appointment: Appointment) => {
-    try {
-      const response = await fetch("/api/send-email", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          appointment,
-          type: "confirmation",
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to send email");
-      }
-    } catch (error) {
-      console.error("Error sending email:", error);
+  const handleCreateBreak = () => {
+    if (!newBreak.title || !newBreak.start || !newBreak.end) {
+      toast.error("Please fill in all required fields.");
+      return;
     }
+
+    const breakPeriod = {
+      title: newBreak.title,
+      start: new Date(`1970-01-01T${newBreak.start}`).toISOString(),
+      end: new Date(`1970-01-01T${newBreak.end}`).toISOString(),
+      resourceId: newBreak.barberId ? Number(newBreak.barberId) : null,
+    };
+
+    createBreak(breakPeriod, {
+      onSuccess: () => {
+        toast.success("Break period added successfully.");
+        setIsBreakDialogOpen(false);
+        setNewBreak({ title: "", start: "", end: "", barberId: "" });
+      },
+      onError: () => {
+        toast.error("Failed to add break period.");
+      },
+    });
   };
 
-  const allEvents = [...appointments, ...breaks].map((event) => ({
-    ...event,
-    resourceId: "barberId" in event ? event.barberId : event.resourceId,
-  }));
+  if (isAppointmentsLoading || isBreaksLoading) {
+    return <Skeleton className="h-[700px] w-full" />;
+  }
+
+  const allEvents = combineEvents(appointments || [], breaks || []);
+
+  const getEventStyle = (event: Appointment | BreakPeriod) => ({
+    backgroundColor: event.isBreak ? "#f3f4f6" : "#3b82f6",
+    color: "#fff",
+    borderRadius: "0.375rem",
+    padding: "0.5rem",
+  });
 
   return (
     <div className="space-y-4">
@@ -222,15 +214,15 @@ export function CalendarView() {
           timeslots={4}
           view={view}
           onView={(newView) => setView(newView)}
-          resources={mockBarbers}
-          resourceIdAccessor="id"
-          resourceTitleAccessor="name"
-          eventPropGetter={(event: Appointment | BreakPeriod) => ({
-            className: event.isBreak ? "bg-gray-400" : "",
+          resources={[] /* Add barber resources if needed */}
+          resourceIdAccessor="resourceId"
+          eventPropGetter={(event) => ({
+            style: getEventStyle(event as Appointment | BreakPeriod),
           })}
         />
       </div>
 
+      {/* Create Appointment Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -251,6 +243,7 @@ export function CalendarView() {
                     customerName: e.target.value,
                   })
                 }
+                placeholder="John Doe"
               />
             </div>
             <div className="grid gap-2">
@@ -265,11 +258,9 @@ export function CalendarView() {
                   <SelectValue placeholder="Select a barber" />
                 </SelectTrigger>
                 <SelectContent>
-                  {mockBarbers.map((barber) => (
-                    <SelectItem key={barber.id} value={barber.id.toString()}>
-                      {barber.name}
-                    </SelectItem>
-                  ))}
+                  {/* Replace with actual barber data */}
+                  <SelectItem value="1">John Doe</SelectItem>
+                  <SelectItem value="2">Jane Smith</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -285,11 +276,10 @@ export function CalendarView() {
                   <SelectValue placeholder="Select a service" />
                 </SelectTrigger>
                 <SelectContent>
-                  {mockServices.map((service) => (
-                    <SelectItem key={service.id} value={service.id.toString()}>
-                      {service.name} ({service.duration} min)
-                    </SelectItem>
-                  ))}
+                  {/* Replace with actual service data */}
+                  <SelectItem value="1">Haircut (30 min)</SelectItem>
+                  <SelectItem value="2">Beard Trim (20 min)</SelectItem>
+                  <SelectItem value="3">Full Service (60 min)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -298,13 +288,17 @@ export function CalendarView() {
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleCreateAppointment}>
-              Create Appointment
+            <Button
+              onClick={handleCreateAppointment}
+              disabled={isCreatingAppointment}
+            >
+              {isCreatingAppointment ? "Creating..." : "Create Appointment"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      {/* Create Break Dialog */}
       <Dialog open={isBreakDialogOpen} onOpenChange={setIsBreakDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -359,12 +353,10 @@ export function CalendarView() {
                   <SelectValue placeholder="All barbers" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectContent>All barbers</SelectContent>
-                  {mockBarbers.map((barber) => (
-                    <SelectItem key={barber.id} value={barber.id.toString()}>
-                      {barber.name}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="">All Barbers</SelectItem>
+                  {/* Replace with actual barber data */}
+                  <SelectItem value="1">John Doe</SelectItem>
+                  <SelectItem value="2">Jane Smith</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -376,7 +368,9 @@ export function CalendarView() {
             >
               Cancel
             </Button>
-            <Button onClick={handleCreateBreak}>Add Break</Button>
+            <Button onClick={handleCreateBreak} disabled={isCreatingBreak}>
+              {isCreatingBreak ? "Adding..." : "Add Break"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

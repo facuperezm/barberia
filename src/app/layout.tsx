@@ -6,6 +6,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import NProgress from "@/components/nprogress";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import Providers from "./providers";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,15 +22,17 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
-      <html lang="en" suppressHydrationWarning>
-        <body className={inter.className}>
-          <Suspense fallback={<Skeleton className="h-4 w-full" />}>
-            <NProgress />
-            {children}
-            <Toaster />
-          </Suspense>
-        </body>
-      </html>
+      <Providers>
+        <html lang="en" suppressHydrationWarning>
+          <body className={inter.className}>
+            <Suspense fallback={<Skeleton className="h-4 w-full" />}>
+              <NProgress />
+              {children}
+              <Toaster />
+            </Suspense>
+          </body>
+        </html>
+      </Providers>
     </ClerkProvider>
   );
 }

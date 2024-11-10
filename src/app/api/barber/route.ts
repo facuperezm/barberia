@@ -5,11 +5,14 @@ export async function GET() {
   try {
     const result = await getBarbers();
 
-    if (!result.success) {
-      return NextResponse.json({ error: result.error }, { status: 400 });
+    if (!result) {
+      return NextResponse.json(
+        { error: "Failed to fetch barbers" },
+        { status: 400 },
+      );
     }
 
-    return NextResponse.json(result.barbers);
+    return NextResponse.json(result);
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to fetch barbers" },

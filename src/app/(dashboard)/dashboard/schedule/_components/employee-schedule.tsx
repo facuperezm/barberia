@@ -52,6 +52,7 @@ export function EmployeeSchedule() {
     try {
       // In a real app, this would be an API call
       // For demo, we'll simulate some appointments
+
       const today = new Date();
       const weekStart = startOfWeek(today, { weekStartsOn: 1 }); // Start from Monday
 
