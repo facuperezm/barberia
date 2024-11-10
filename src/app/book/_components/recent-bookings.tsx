@@ -23,7 +23,7 @@ import { TableSkeleton } from "@/components/skeleton";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import { AppointmentActions } from "./appointment-actionts";
+import { AppointmentActions } from "./appointment-actions";
 
 interface Booking {
   id: number;

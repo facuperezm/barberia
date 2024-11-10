@@ -2,7 +2,7 @@
 
 import { DashboardHeader } from "@/app/(dashboard)/dashboard/_components/header";
 import { DashboardShell } from "@/app/(dashboard)/dashboard/_components/shell";
-import { CalendarView } from "../_components/calendar-view";
+import { EmployeeSchedule } from "./_components/employee-schedule";
 
 export default function SchedulePage() {
   return (
@@ -12,7 +12,7 @@ export default function SchedulePage() {
         description="Manage appointments and view your schedule"
       />
       <div className="p-4">
-        <CalendarView />
+        <EmployeeSchedule />
       </div>
     </DashboardShell>
   );

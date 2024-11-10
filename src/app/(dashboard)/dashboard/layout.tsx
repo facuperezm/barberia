@@ -2,6 +2,7 @@ import { DashboardNav } from "@/app/(dashboard)/dashboard/_components/nav";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Scissors } from "lucide-react";
 import Link from "next/link";
+import { Suspense } from "react";
 export default function DashboardLayout({
   children,
 }: {
@@ -30,7 +31,9 @@ export default function DashboardLayout({
             <DashboardNav />
           </ScrollArea>
         </aside>
-        <main className="flex w-full flex-col overflow-hidden">{children}</main>
+        <main className="flex w-full flex-col overflow-hidden">
+          <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
+        </main>
       </div>
     </div>
   );

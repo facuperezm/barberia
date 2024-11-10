@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 const steps = [
   { title: "Choose Barber", component: BarberStep },
@@ -20,6 +21,7 @@ const steps = [
 export function BookingForm() {
   const { step, setStep, state, resetBooking } = useBooking();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
 
   const canGoNext = () => {
     switch (step) {
@@ -53,8 +55,8 @@ export function BookingForm() {
           customerName: state.customerName,
           customerEmail: state.customerEmail,
           customerPhone: state.customerPhone,
-          date: state.date?.toISOString(),
-          time: state.time.toString(),
+          date: state.date,
+          time: state.time,
         }),
       });
 
@@ -62,9 +64,25 @@ export function BookingForm() {
         throw new Error("Failed to create appointment");
       }
 
-      toast.success("Appointment booked successfully!");
+      // Get barber and service names from your data
+      const barberName = state.barberId === "1" ? "John Doe" : "Jane Smith";
+      const serviceName =
+        state.serviceId === "1"
+          ? "Classic Haircut"
+          : state.serviceId === "2"
+            ? "Beard Trim"
+            : "Full Service";
+
+      // Redirect to success page with booking details
+      router.push(
+        `/book/success?` +
+          `date=${state.date?.toISOString()}` +
+          `&time=${state.time}` +
+          `&barber=${encodeURIComponent(barberName)}` +
+          `&service=${encodeURIComponent(serviceName)}`,
+      );
+
       resetBooking();
-      setStep(0);
     } catch (error) {
       toast.error("Failed to book appointment. Please try again.");
     } finally {
