@@ -1,8 +1,8 @@
 # Barbershop Management Application
 
-![Barbershop](./screenshot.png)
+![Barbershop](./screenshot.jpg)
 
-**Live Demo:** [Barbershop App](https://your-barbershop-app.vercel.app/)
+**Live Demo:** [Barbershop App](https://barbershop.facupm.dev/)
 
 > _Disclaimer: This is a real-world project developed for a customer._
 
