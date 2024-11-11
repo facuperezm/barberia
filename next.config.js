@@ -1,13 +1,29 @@
 /** @type {import('next').NextConfig} */
+
 const nextConfig = {
   images: {
-    domains: [
-      "resend.com",
-      "ik.imagekit.io",
-      "joseppons.com",
-      "e00-expansion.uecdn.es",
-      "encrypted-tbn0.gstatic.com",
-      "www.elivelimen.com",
+    remotePatterns: [
+      {
+        hostname: "resend.com",
+      },
+      {
+        hostname: "ik.imagekit.io",
+      },
+      {
+        hostname: "joseppons.com",
+      },
+      {
+        hostname: "e00-expansion.uecdn.es",
+      },
+      {
+        hostname: "encrypted-tbn0.gstatic.com",
+      },
+      {
+        hostname: "www.elivelimen.com",
+      },
+      {
+        hostname: "images.unsplash.com",
+      },
     ],
   },
 };

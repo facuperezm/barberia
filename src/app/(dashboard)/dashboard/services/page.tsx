@@ -1,59 +1,12 @@
-"use client";
-
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Clock, Scissors } from "lucide-react";
 import { DashboardHeader } from "@/app/(dashboard)/dashboard/_components/header";
 import { DashboardShell } from "@/app/(dashboard)/dashboard/_components/shell";
+import { getServices } from "@/server/db/services";
+import ClientDialogServices from "./_components/client-dialog-services";
 
-// Fixed services with predefined durations
-const services = [
-  {
-    id: "1",
-    name: "Haircut",
-    duration: 30,
-    price: 30,
-    description: "Professional haircut service",
-  },
-  {
-    id: "2",
-    name: "Shave",
-    duration: 30,
-    price: 25,
-    description: "Traditional straight razor shave",
-  },
-  {
-    id: "3",
-    name: "Haircut + Shave",
-    duration: 60,
-    price: 50,
-    description: "Complete grooming service",
-  },
-];
-
-export default function ServicesPage() {
-  const [prices, setPrices] = useState<Record<string, number>>(
-    services.reduce(
-      (acc, service) => ({ ...acc, [service.id]: service.price }),
-      {},
-    ),
-  );
-
-  const handleUpdatePrice = (serviceId: string, newPrice: number) => {
-    setPrices((prev) => ({ ...prev, [serviceId]: newPrice }));
-  };
+export default async function ServicesPage() {
+  const services = await getServices();
 
   return (
     <DashboardShell>
@@ -79,43 +32,8 @@ export default function ServicesPage() {
                   {service.duration} minutes
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-lg font-bold">
-                    ${prices[service.id]}
-                  </span>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" size="sm">
-                        Update Price
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Update Price</DialogTitle>
-                        <DialogDescription>
-                          Set a new price for {service.name}
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="grid gap-4 py-4">
-                        <div className="grid gap-2">
-                          <Label htmlFor="price">Price ($)</Label>
-                          <Input
-                            id="price"
-                            type="number"
-                            defaultValue={prices[service.id]}
-                            onChange={(e) =>
-                              handleUpdatePrice(
-                                service.id,
-                                Number(e.target.value),
-                              )
-                            }
-                          />
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <Button type="submit">Save changes</Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
+                  <span className="text-lg font-bold">${service.price}</span>
+                  <ClientDialogServices service={service} />
                 </div>
                 <p className="text-sm text-muted-foreground">
                   {service.description}

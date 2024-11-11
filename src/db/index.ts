@@ -4,5 +4,8 @@ import postgres from "postgres";
 
 import * as schema from "./schema";
 
-const client = postgres(env.DATABASE_URL);
-export const db = drizzle(client, { schema });
+export const connection = postgres(env.DATABASE_URL);
+export const db = drizzle(connection, {
+  schema,
+  logger: true,
+});

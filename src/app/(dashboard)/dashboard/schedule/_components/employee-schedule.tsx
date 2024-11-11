@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -16,9 +16,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { format, addDays, startOfWeek } from "date-fns";
+import { format } from "date-fns";
 import { Calendar, Clock, User } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useQuery } from "@tanstack/react-query";
+import { Employee } from "@/server/db/employees";
 
 interface Appointment {
   id: number;
@@ -29,7 +31,7 @@ interface Appointment {
 }
 
 interface DaySchedule {
-  date: Date;
+  date: string; // ISO string
   appointments: Appointment[];
   availableSlots: number;
   totalSlots: number;
@@ -37,77 +39,41 @@ interface DaySchedule {
 
 export function EmployeeSchedule() {
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
-  const [weekSchedule, setWeekSchedule] = useState<DaySchedule[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
 
-  // Generate the week's schedule when employee is selected
-  useEffect(() => {
-    if (selectedEmployee) {
-      fetchWeekSchedule();
+  const {
+    data: employees,
+    isLoading: isEmployeesLoading,
+    error: employeesError,
+  } = useQuery<Employee[]>({
+    queryKey: ["employees"],
+    queryFn: async () => {
+      const res = await fetch("/api/employees");
+      if (!res.ok) {
+        throw new Error("Failed to fetch employees");
+      }
+      return res.json();
+    },
+  });
+
+  const {
+    data: weekSchedule,
+    isLoading: isScheduleLoading,
+    error: scheduleError,
+  } = useQuery<DaySchedule[]>({
+    queryKey: ["weeklySchedule", selectedEmployee],
+    queryFn: () => fetchWeeklySchedule(Number(selectedEmployee)),
+    enabled: !!selectedEmployee,
+  });
+
+  async function fetchWeeklySchedule(
+    employeeId: number,
+  ): Promise<DaySchedule[]> {
+    const res = await fetch(`/api/schedule?employeeId=${employeeId}`);
+    if (!res.ok) {
+      throw new Error("Failed to fetch schedule");
     }
-  }, [selectedEmployee]);
-
-  const fetchWeekSchedule = async () => {
-    setIsLoading(true);
-    try {
-      // In a real app, this would be an API call
-      // For demo, we'll simulate some appointments
-
-      const today = new Date();
-      const weekStart = startOfWeek(today, { weekStartsOn: 1 }); // Start from Monday
-
-      const schedule: DaySchedule[] = Array.from({ length: 6 }).map(
-        (_, index) => {
-          const date = addDays(weekStart, index);
-          const totalSlots = 8; // 8 slots per day
-
-          // Simulate different appointments for different days
-          const appointments: Appointment[] = [];
-          if (index === 0) {
-            // Monday
-            appointments.push(
-              {
-                id: 1,
-                customerName: "John Smith",
-                service: "Haircut",
-                time: "09:00",
-                status: "confirmed",
-              },
-              {
-                id: 2,
-                customerName: "Alice Johnson",
-                service: "Beard Trim",
-                time: "11:00",
-                status: "confirmed",
-              },
-            );
-          } else if (index === 2) {
-            // Wednesday
-            appointments.push({
-              id: 3,
-              customerName: "Bob Wilson",
-              service: "Full Service",
-              time: "14:00",
-              status: "pending",
-            });
-          }
-
-          return {
-            date,
-            appointments,
-            availableSlots: totalSlots - appointments.length,
-            totalSlots,
-          };
-        },
-      );
-
-      setWeekSchedule(schedule);
-    } catch (error) {
-      console.error("Error fetching schedule:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    return res.json();
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -132,31 +98,47 @@ export function EmployeeSchedule() {
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-2">
-          <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select an employee" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1">John Doe</SelectItem>
-              <SelectItem value="2">Jane Smith</SelectItem>
-            </SelectContent>
-          </Select>
+          {isEmployeesLoading ? (
+            <Skeleton className="h-10 w-full" />
+          ) : employeesError ? (
+            <div className="text-destructive">Error loading employees</div>
+          ) : (
+            <Select
+              value={selectedEmployee}
+              onValueChange={setSelectedEmployee}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select an employee" />
+              </SelectTrigger>
+              <SelectContent>
+                {employees?.map((employee) => (
+                  <SelectItem key={employee.id} value={employee.id.toString()}>
+                    {employee.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
-        {isLoading ? (
+        {isScheduleLoading ? (
           <div className="flex justify-center py-4">
-            <Skeleton className="size-10" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        ) : scheduleError ? (
+          <div className="py-4 text-center text-destructive">
+            Error loading schedule
           </div>
         ) : (
           selectedEmployee && (
             <div className="space-y-4">
-              {weekSchedule.map((day, index) => (
+              {weekSchedule?.map((day, index) => (
                 <Card key={index} className="p-4">
                   <div className="mb-4 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Calendar className="size-4 text-muted-foreground" />
                       <span className="font-medium">
-                        {format(day.date, "EEEE, MMM d")}
+                        {format(new Date(day.date), "EEEE, MMM d")}
                       </span>
                     </div>
                     <Badge variant="secondary">

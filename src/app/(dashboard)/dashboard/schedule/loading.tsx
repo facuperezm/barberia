@@ -1,8 +1,8 @@
 import { DashboardHeader } from "@/app/(dashboard)/dashboard/_components/header";
 import { DashboardShell } from "@/app/(dashboard)/dashboard/_components/shell";
-import { EmployeeSchedule } from "./_components/employee-schedule";
+import { Skeleton } from "@/components/ui/skeleton";
 
-export default function SchedulePage() {
+export default function ScheduleLoading() {
   return (
     <DashboardShell>
       <DashboardHeader
@@ -10,7 +10,7 @@ export default function SchedulePage() {
         description="Manage appointments and view your schedule"
       />
       <div className="p-4">
-        <EmployeeSchedule />
+        <Skeleton className="h-[500px] w-full" />
       </div>
     </DashboardShell>
   );

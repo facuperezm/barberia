@@ -1,25 +1,19 @@
-import { DashboardHeader } from "@/app/(dashboard)/dashboard/_components/header";
-import { DashboardShell } from "@/app/(dashboard)/dashboard/_components/shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Clock, Scissors, Users } from "lucide-react";
+import { DashboardShell } from "./_components/shell";
 import { RecentBookings } from "@/app/book/_components/recent-bookings";
-import { getAppointments } from "@/server/db/appointments";
-import { getServices } from "@/server/db/services";
+import { Calendar, Clock, Scissors, Users } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { DashboardHeader } from "./_components/header";
 
-export default async function DashboardPage() {
-  const appointments = await getAppointments();
-  const services = await getServices();
-
-  if (!appointments || !services) {
-    return <div>Loading...</div>;
-  }
-
+export default function DashboardLoading() {
   return (
     <DashboardShell>
-      <DashboardHeader
-        heading="Dashboard"
-        description="Overview of your barbershop"
-      />
+      <div className="flex items-center justify-between px-6 pb-2 pt-8">
+        <div className="grid gap-1">
+          <Skeleton className="h-5 w-32" />
+          <Skeleton className="h-4 w-20" />
+        </div>
+      </div>
       <div className="space-y-4 p-4">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
@@ -30,7 +24,7 @@ export default async function DashboardPage() {
               <Calendar className="size-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{appointments.length}</div>
+              <Skeleton className="h-5 w-full" />
               <p className="text-xs text-muted-foreground">Last 30 days</p>
             </CardContent>
           </Card>
@@ -42,12 +36,7 @@ export default async function DashboardPage() {
               <Users className="size-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {
-                  appointments.filter((booking) => booking.status === "pending")
-                    .length
-                }
-              </div>
+              <Skeleton className="h-5 w-full" />
               <p className="text-xs text-muted-foreground">Last 30 days</p>
             </CardContent>
           </Card>
@@ -57,7 +46,7 @@ export default async function DashboardPage() {
               <Scissors className="size-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{services.length}</div>
+              <Skeleton className="h-5 w-full" />
               <p className="text-xs text-muted-foreground">Available</p>
             </CardContent>
           </Card>
@@ -69,10 +58,7 @@ export default async function DashboardPage() {
               <Clock className="size-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {services.reduce((acc, service) => acc + service.duration, 0) /
-                  services.length}
-              </div>
+              <Skeleton className="h-5 w-full" />
               <p className="text-xs text-muted-foreground">Per appointment</p>
             </CardContent>
           </Card>

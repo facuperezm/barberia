@@ -7,7 +7,6 @@ import {
   boolean,
   date,
   time,
-  decimal,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -26,7 +25,7 @@ export const services = pgTable("services", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
-  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  price: integer("price").notNull(),
   duration: integer("duration").notNull(), // Duration in minutes
   createdAt: timestamp("created_at").defaultNow(),
 });
