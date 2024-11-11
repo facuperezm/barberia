@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock, MapPin, Scissors } from "lucide-react";
+import Image from "next/image";
 
 const features = [
   {
@@ -121,10 +122,11 @@ export default function Home() {
                 className="group relative overflow-hidden rounded-lg bg-background"
               >
                 <div className="aspect-[4/3]">
-                  <img
+                  <Image
                     src={service.image}
                     alt={service.name}
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    fill
                   />
                 </div>
                 <div className="p-6">

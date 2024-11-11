@@ -6,8 +6,17 @@ import { Button } from "@/components/ui/button";
 import { CalendarCheck, Mail, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
+import { Suspense } from "react";
 
 export default function BookingSuccessPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <BookingDetails />
+    </Suspense>
+  );
+}
+
+function BookingDetails() {
   const searchParams = useSearchParams();
 
   const date = searchParams.get("date");

@@ -3,6 +3,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Scissors } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
+
 export default function DashboardLayout({
   children,
 }: {

@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import AppointmentConfirmationEmail from "@/lib/emails/reservation-confirmation";
 import { env } from "@/env";
+import { db } from "@/db";
+import { barbers } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 const resend = new Resend(env.NEXT_PUBLIC_RESEND_API_KEY);
 
@@ -15,6 +18,12 @@ export async function POST(request: Request) {
       // Get service and barber details (replace with your actual data fetching)
       const service = "Haircut"; // Replace with actual service name
       const barberName = "John Doe"; // Replace with actual barber name
+
+      const barber = await db.query.barbers.findFirst({
+        where: eq(barbers.id, barberId),
+      });
+
+      console.log(barber, serviceId);
 
       const date = new Date(start).toLocaleDateString();
       const time = new Date(start).toLocaleTimeString([], {

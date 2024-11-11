@@ -14,7 +14,6 @@ import {
   getBarbers,
   deleteBarber as deleteBarberAction,
 } from "@/lib/actions/actions";
-import { notFound } from "next/navigation";
 import ClientDialog from "./_components/client-dialog";
 import { revalidatePath } from "next/cache";
 import { type Barber } from "@/lib/types";

@@ -2,7 +2,7 @@ export interface Barber {
   id: number;
   name: string;
   email: string;
-  phone: string;
-  imageUrl: string;
+  phone: string | null;
+  imageUrl: string | null;
   createdAt: Date | null;
 }

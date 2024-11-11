@@ -1,19 +1,12 @@
 import { db } from "@/db";
 import { barbers } from "@/db/schema";
+import { type Barber } from "@/lib/types";
 import { useQuery } from "@tanstack/react-query";
-
-export interface Barber {
-  id: string;
-  name: string;
-  // Add more fields if necessary
-}
 
 const fetchBarbers = async (): Promise<Barber[]> => {
   const response = await db.select().from(barbers);
-  return response.map((barber) => ({
-    ...barber,
-    id: barber.id.toString(),
-  }));
+
+  return response;
 };
 
 export const useBarbers = () => {

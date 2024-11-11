@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
-import { Calendar, Clock, Home, Scissors, Settings, Users } from "lucide-react";
+import { Calendar, Home, Scissors, Users, UserSquare } from "lucide-react";
 
 const items = [
   {
@@ -28,19 +28,9 @@ const items = [
     icon: Users,
   },
   {
-    title: "Management",
+    title: "Employees",
     href: "/dashboard/employees",
-    icon: Users,
-  },
-  {
-    title: "Working Hours",
-    href: "/dashboard/hours",
-    icon: Clock,
-  },
-  {
-    title: "Settings",
-    href: "/dashboard/settings",
-    icon: Settings,
+    icon: UserSquare,
   },
 ];
 

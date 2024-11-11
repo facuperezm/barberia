@@ -1,4 +1,5 @@
 /** @type {import("eslint").Linter.Config} */
+
 const config = {
   parser: "@typescript-eslint/parser",
   parserOptions: {
@@ -39,6 +40,9 @@ const config = {
     ],
     "@typescript-eslint/no-unsafe-assignment": "off",
     "@typescript-eslint/no-unsafe-call": "off",
+    "tailwindcss/no-custom-classname": "off",
+    "tailwindcss/enforces-shorthand": "off",
+    "tailwindcss/no-unnecessary-arbitrary-value": "off",
   },
   settings: {
     tailwindcss: {
