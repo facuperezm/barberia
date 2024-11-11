@@ -9,6 +9,10 @@ export default async function DashboardPage() {
   const appointments = await db.query.appointments.findMany();
   const services = await db.query.services.findMany();
 
+  if (!appointments || !services) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <DashboardShell>
       <DashboardHeader
