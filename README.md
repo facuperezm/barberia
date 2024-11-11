@@ -24,7 +24,7 @@ The goal of this project is to create a robust application that allows barbersho
 ## Tools Used
 
 - **React.js:** For building a dynamic and responsive user interface.
-- **Next.js 15 (App Router):** Modern framework for server-side rendering and routing.
+- **Next.js 15:** Modern framework for server-side rendering and routing.
 - **Tanstack Query:** For efficient data fetching, caching, and state management.
 - **Vite.js:** Frontend build tool for fast development experiences.
 - **Node.js:** Backend runtime environment providing flexibility and scalability.
