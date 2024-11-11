@@ -14,7 +14,7 @@ const fetchServices = async (): Promise<Service[]> => {
   return response.map((service) => ({
     ...service,
     id: service.id.toString(),
-    price: parseFloat(service.price),
+    price: service.price,
   }));
 };
 
