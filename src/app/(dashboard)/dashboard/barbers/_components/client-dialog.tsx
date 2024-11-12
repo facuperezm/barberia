@@ -11,10 +11,10 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { addBarber } from "../_actions/addbarber";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useActionState, useState } from "react";
+import { addBarber } from "@/lib/actions/barbers";
 
 const initialState = {
   errors: {
@@ -31,6 +31,7 @@ export default function ClientDialog() {
   const [open, setOpen] = useState(false);
   const [state, formAction] = useActionState(addBarber, initialState);
   // TODO: add form validation
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>

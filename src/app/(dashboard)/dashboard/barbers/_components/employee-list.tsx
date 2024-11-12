@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { MoreVertical, Pencil, Trash2 } from "lucide-react";
-import { EditEmployeeDialog } from "./edit-employee";
+import { EditEmployeeDialog } from "../../employees/_components/edit-employee";
 interface Employee {
   id: string;
   name: string;
@@ -145,7 +145,7 @@ export function EmployeeList() {
       <EditEmployeeDialog
         employee={editingEmployee}
         open={!!editingEmployee}
-        onOpenChange={(open) => !open && setEditingEmployee(null)}
+        onOpenChange={(open: boolean) => !open && setEditingEmployee(null)}
         onSave={handleEditEmployee}
       />
     </>

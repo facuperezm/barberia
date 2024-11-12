@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { DashboardHeader } from "@/app/(dashboard)/dashboard/_components/header";
-import { DashboardShell } from "@/app/(dashboard)/dashboard/_components/shell";
+import { DashboardHeader } from "@/app/(dashboard)/dashboard/_components/dashboard-header";
+import { DashboardShell } from "@/app/(dashboard)/dashboard/_components/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { AddEmployeeDialog } from "@/app/(dashboard)/dashboard/employees/_components/add-employee";

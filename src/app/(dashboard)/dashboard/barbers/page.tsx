@@ -1,5 +1,5 @@
-import { DashboardHeader } from "@/app/(dashboard)/dashboard/_components/header";
-import { DashboardShell } from "@/app/(dashboard)/dashboard/_components/shell";
+import { DashboardHeader } from "@/app/(dashboard)/dashboard/_components/dashboard-header";
+import { DashboardShell } from "@/app/(dashboard)/dashboard/_components/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,36 +10,21 @@ import {
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Trash2 } from "lucide-react";
-import {
-  getBarbers,
-  deleteBarber as deleteBarberAction,
-} from "@/lib/actions/actions";
+import { getBarbers } from "@/lib/actions/barbers";
 import ClientDialog from "./_components/client-dialog";
-import { revalidatePath } from "next/cache";
 import { type Barber } from "@/lib/types";
+import { deleteBarber } from "@/lib/actions/barbers";
+import { EmployeeList } from "./_components/employee-list";
 
 export default async function BarbersPage() {
   const barbers = await getBarbers();
-
-  // Server Action to handle deleting a barber
-  async function deleteBarber(formData: FormData) {
-    "use server";
-    const id = formData.get("id") as string;
-
-    try {
-      await deleteBarberAction(parseInt(id));
-      revalidatePath("/dashboard/barbers");
-    } catch (error) {
-      console.error("Error deleting barber:", error);
-      throw new Error("Failed to delete barber.");
-    }
-  }
 
   return (
     <DashboardShell>
       <DashboardHeader heading="Barbers" description="Manage your barber team">
         <ClientDialog />
       </DashboardHeader>
+      <EmployeeList />
       <div className="grid gap-4 p-4 md:grid-cols-2 lg:grid-cols-3">
         {barbers?.map((barber: Barber) => (
           <Card key={barber.id}>

@@ -1,5 +1,5 @@
-import { DashboardHeader } from "@/app/(dashboard)/dashboard/_components/header";
-import { DashboardShell } from "@/app/(dashboard)/dashboard/_components/shell";
+import { DashboardHeader } from "@/app/(dashboard)/dashboard/_components/dashboard-header";
+import { DashboardShell } from "@/app/(dashboard)/dashboard/_components/dashboard-shell";
 import { EmployeeSchedule } from "./_components/employee-schedule";
 
 export default function SchedulePage() {

@@ -1,12 +1,10 @@
-"use server";
+import { appointments } from "@/db/schema";
 
 import { db } from "@/db";
-import { appointments, barbers, services } from "@/db/schema";
-import { type Barber } from "@/lib/types";
 import { eq } from "drizzle-orm";
+import { barbers, services } from "@/db/schema";
 import { z } from "zod";
 
-// Define a Zod schema for appointment validation
 const appointmentSchema = z.object({
   barberId: z.number().int().positive(),
   serviceId: z.number().int().positive(),
@@ -17,49 +15,9 @@ const appointmentSchema = z.object({
   time: z.string(), // HH:mm:ss format
 });
 
-export async function addBarber(formData: FormData) {
-  const name = formData.get("name");
-  const email = formData.get("email");
-  const phone = formData.get("phone");
-  const imageUrl = formData.get("imageUrl");
-  try {
-    const newBarber = await db
-      .insert(barbers)
-      .values({
-        name: name as string,
-        email: email as string,
-        phone: phone as string,
-        imageUrl: imageUrl as string,
-      })
-      .returning();
-    return { success: true, barber: newBarber };
-  } catch (error) {
-    console.error("Error adding barber:", error);
-    return { success: false, error: "Failed to add barber" };
-  }
-}
-
-export async function deleteBarber(id: number) {
-  try {
-    await db.delete(barbers).where(eq(barbers.id, id));
-    return { success: true };
-  } catch (error) {
-    console.error("Error deleting barber:", error);
-    return { success: false, error: "Failed to delete barber" };
-  }
-}
-
-export async function createAppointment(appointmentData: {
-  barberId: number;
-  serviceId: number;
-  customerName: string;
-  customerEmail: string;
-  customerPhone: string;
-  date: string;
-  time: string;
-}) {
+export async function createAppointment(formData: FormData) {
   // Validate the input data using Zod
-  const parsedData = appointmentSchema.safeParse(appointmentData);
+  const parsedData = appointmentSchema.safeParse(formData);
   if (!parsedData.success) {
     console.error("Validation Error:", parsedData.error.format());
     return { success: false, error: "Invalid appointment data" };
@@ -70,7 +28,7 @@ export async function createAppointment(appointmentData: {
     const barberExists = await db
       .select()
       .from(barbers)
-      .where(eq(barbers.id, appointmentData.barberId))
+      .where(eq(barbers.id, parsedData.data.barberId))
       .limit(1);
     // .then((res) => res.length > 0);
     console.log(barberExists, "barberExists");
@@ -82,7 +40,7 @@ export async function createAppointment(appointmentData: {
     const serviceExists = await db
       .select()
       .from(services)
-      .where(eq(services.id, appointmentData.serviceId))
+      .where(eq(services.id, parsedData.data.serviceId))
       .limit(1)
       .then((res) => res.length > 0);
     if (!serviceExists) {
@@ -90,13 +48,13 @@ export async function createAppointment(appointmentData: {
     }
 
     // Format the date to 'YYYY-MM-DD'
-    const formattedDate = appointmentData.date.split("T")[0];
+    const formattedDate = parsedData.data.date.split("T")[0];
 
     // Format the time to 'HH:mm:ss' if necessary
-    let formattedTime = appointmentData.time;
+    let formattedTime = parsedData.data.time;
     const timeRegex = /^([0-1]\d|2[0-3]):([0-5]\d)$/; // HH:mm format
-    if (timeRegex.test(appointmentData.time)) {
-      formattedTime = `${appointmentData.time}:00`; // Append seconds if not present
+    if (timeRegex.test(parsedData.data.time)) {
+      formattedTime = `${parsedData.data.time}:00`; // Append seconds if not present
     }
 
     console.log(formattedDate, formattedTime);
@@ -119,26 +77,6 @@ export async function createAppointment(appointmentData: {
   } catch (error) {
     console.error("Error creating appointment:", error);
     return { success: false, error: "Failed to create appointment" };
-  }
-}
-
-export async function getBarbers(): Promise<Barber[]> {
-  try {
-    const allBarbers = await db.select().from(barbers);
-    return allBarbers as Barber[];
-  } catch (error) {
-    console.error("Error fetching barbers:", error);
-    return [];
-  }
-}
-
-export async function getServices() {
-  try {
-    const allServices = await db.select().from(services);
-    return { success: true, services: allServices };
-  } catch (error) {
-    console.error("Error fetching services:", error);
-    return { success: false, error: "Failed to fetch services" };
   }
 }
 

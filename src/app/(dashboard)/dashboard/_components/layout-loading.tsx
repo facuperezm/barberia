@@ -1,8 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { DashboardHeader } from "./header";
-import { DashboardShell } from "./shell";
+import { DashboardHeader } from "./dashboard-header";
+import { DashboardShell } from "./dashboard-shell";
 
 export default function LayoutLoading() {
   return (

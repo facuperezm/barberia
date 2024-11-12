@@ -1,6 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { DashboardShell } from "../_components/shell";
-import { DashboardHeader } from "../_components/header";
+import { DashboardShell } from "../_components/dashboard-shell";
+import { DashboardHeader } from "../_components/dashboard-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function Loading() {

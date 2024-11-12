@@ -20,7 +20,7 @@ import { format } from "date-fns";
 import { Calendar, Clock, User } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
-import { type Employee } from "@/server/db/employees";
+import { type Employee } from "@/server/queries/employees";
 
 interface Appointment {
   id: number;

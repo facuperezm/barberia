@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { DashboardHeader } from "@/app/(dashboard)/dashboard/_components/header";
-import { DashboardShell } from "@/app/(dashboard)/dashboard/_components/shell";
-import { EmployeeList } from "@/app/(dashboard)/dashboard/employees/_components/employee-list";
+import { DashboardHeader } from "@/app/(dashboard)/dashboard/_components/dashboard-header";
+import { DashboardShell } from "@/app/(dashboard)/dashboard/_components/dashboard-shell";
 import { EmployeeSchedule } from "@/app/(dashboard)/dashboard/employees/_components/employee-schedule";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -24,8 +23,7 @@ export default function EmployeesPage() {
         </Button>
       </DashboardHeader>
 
-      <div className="grid gap-4 p-4 lg:grid-cols-2">
-        <EmployeeList />
+      <div className="grid gap-4 p-4 lg:grid-cols-1">
         <EmployeeSchedule />
       </div>
 

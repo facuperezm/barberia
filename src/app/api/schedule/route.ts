@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getWeeklySchedule } from "@/server/db/schedule";
+import { getWeeklySchedule } from "@/server/queries/schedule";
 import { z } from "zod";
 
 const QuerySchema = z.object({

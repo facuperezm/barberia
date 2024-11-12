@@ -1,4 +1,4 @@
-import { updateAppointmentStatus } from "@/lib/actions/actions";
+import { updateAppointmentStatus } from "@/lib/actions/appointments";
 import { NextResponse } from "next/server";
 
 export async function PATCH(

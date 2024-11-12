@@ -1,8 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock, Scissors } from "lucide-react";
-import { DashboardHeader } from "@/app/(dashboard)/dashboard/_components/header";
-import { DashboardShell } from "@/app/(dashboard)/dashboard/_components/shell";
-import { getServices } from "@/server/db/services";
+import { DashboardHeader } from "@/app/(dashboard)/dashboard/_components/dashboard-header";
+import { DashboardShell } from "@/app/(dashboard)/dashboard/_components/dashboard-shell";
+import { getServices } from "@/server/queries/services";
 import ClientDialogServices from "./_components/client-dialog-services";
 
 export default async function ServicesPage() {

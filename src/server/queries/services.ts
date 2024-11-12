@@ -2,8 +2,14 @@ import { db } from "@/db";
 import { eq } from "drizzle-orm";
 import { services } from "@/db/schema";
 
-export function getServices() {
-  return db.query.services.findMany();
+export async function getServices() {
+  try {
+    const allServices = await db.select().from(services);
+    return allServices;
+  } catch (error) {
+    console.error("Error fetching services:", error);
+    return [];
+  }
 }
 
 export function updateServicePrice(formData: FormData) {

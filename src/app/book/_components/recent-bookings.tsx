@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import { useEffect, useState } from "react";
 import { format, startOfWeek, addDays } from "date-fns";
-import { TableSkeleton } from "@/components/skeleton";
+import { TableSkeleton } from "@/app/(dashboard)/dashboard/_components/skeleton";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";

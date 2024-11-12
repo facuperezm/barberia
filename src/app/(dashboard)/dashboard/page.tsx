@@ -1,17 +1,18 @@
-import { DashboardHeader } from "@/app/(dashboard)/dashboard/_components/header";
-import { DashboardShell } from "@/app/(dashboard)/dashboard/_components/shell";
+import { DashboardHeader } from "@/app/(dashboard)/dashboard/_components/dashboard-header";
+import { DashboardShell } from "@/app/(dashboard)/dashboard/_components/dashboard-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Clock, Scissors, Users } from "lucide-react";
 import { RecentBookings } from "@/app/book/_components/recent-bookings";
-import { getAppointments } from "@/server/db/appointments";
-import { getServices } from "@/server/db/services";
+import { getAppointments } from "@/server/queries/appointments";
+import { getServices } from "@/server/queries/services";
+import { CardSkeleton } from "./_components/skeleton";
 
 export default async function DashboardPage() {
   const appointments = await getAppointments();
   const services = await getServices();
 
   if (!appointments || !services) {
-    return <div>Loading...</div>;
+    return <CardSkeleton />;
   }
 
   return (
