@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { db } from "@/db";
-import { services } from "@/db/schema";
+import { db } from "@/drizzle";
+import { services } from "@/drizzle/schema";
 
 interface Service {
   id: string;

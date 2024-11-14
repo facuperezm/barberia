@@ -6,6 +6,7 @@ import LayoutLoading from "./_components/layout-loading";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import HeaderNav from "./_components/nav-menu";
 import { AppSidebar } from "./_components/app-sidebar";
+import { cookies } from "next/headers";
 
 const AUTHORIZED_EMAIL = env.OWNER_EMAIL;
 
@@ -23,8 +24,10 @@ export default async function DashboardLayout({
 
   if (userId == null) return redirectToSignIn();
 
+  const cookieStore = await cookies();
+  const defaultOpen = cookieStore.get("sidebar:state")?.value === "true";
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={defaultOpen}>
       <AppSidebar />
       <main className="flex w-full flex-col">
         <HeaderNav />

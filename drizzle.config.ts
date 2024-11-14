@@ -1,11 +1,16 @@
 import { env } from "@/env";
-import { type Config } from "drizzle-kit";
+import { defineConfig, type Config } from "drizzle-kit";
 
-export default {
-  schema: "./src/db/schema.ts",
+export default defineConfig({
+  schema: "./src/drizzle/schema.ts",
+  out: "./src/drizzle/migrations",
   dialect: "postgresql",
-  out: "./drizzle",
+  strict: true,
+  verbose: true,
   dbCredentials: {
-    url: env.DATABASE_URL,
+    url:
+      env.NEXT_PUBLIC_NODE_ENV === "dev"
+        ? env.DATABASE_URL_DEV
+        : env.DATABASE_URL,
   },
-} satisfies Config;
+}) satisfies Config;

@@ -1,5 +1,5 @@
-import { db } from "@/db";
-import { appointments } from "@/db/schema";
+import { db } from "@/drizzle";
+import { appointments } from "@/drizzle/schema";
 import { addDays, startOfWeek } from "date-fns";
 import { and, between } from "drizzle-orm";
 import { eq } from "drizzle-orm";

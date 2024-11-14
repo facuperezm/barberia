@@ -1,5 +1,5 @@
-import { db } from "@/db";
-import { barbers } from "@/db/schema";
+import { db } from "@/drizzle";
+import { barbers } from "@/drizzle/schema";
 import { type Barber } from "@/lib/types";
 import { useQuery } from "@tanstack/react-query";
 

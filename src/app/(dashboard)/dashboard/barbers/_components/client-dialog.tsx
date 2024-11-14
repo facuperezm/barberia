@@ -14,16 +14,11 @@ import { Plus } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useActionState, useState } from "react";
-import { addBarber } from "@/lib/actions/barbers";
+import { addBarber } from "@/server/actions/barbers";
 
 const initialState = {
-  errors: {
-    name: undefined,
-    email: undefined,
-    phone: undefined,
-    imageUrl: undefined,
-  },
-  success: undefined,
+  success: false,
+  error: "",
   barber: undefined,
 };
 

@@ -1,5 +1,5 @@
-import { db } from "@/db";
-import { barbers } from "@/db/schema";
+import { db } from "@/drizzle";
+import { barbers } from "@/drizzle/schema";
 import { asc } from "drizzle-orm";
 
 export interface Employee {

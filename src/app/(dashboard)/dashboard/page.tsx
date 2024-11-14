@@ -71,8 +71,10 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {services.reduce((acc, service) => acc + service.duration, 0) /
-                  services.length}
+                {Math.round(
+                  services.reduce((acc, service) => acc + service.duration, 0) /
+                    services.length,
+                )}
               </div>
               <p className="text-xs text-muted-foreground">Per appointment</p>
             </CardContent>

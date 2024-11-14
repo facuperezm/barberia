@@ -10,8 +10,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { updateServicePrice } from "@/lib/actions/services";
-import { type services } from "@/db/schema";
+import { updateServicePrice } from "@/server/actions/services";
+import { type services } from "@/drizzle/schema";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";

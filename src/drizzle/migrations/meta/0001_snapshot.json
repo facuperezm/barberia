@@ -1,6 +1,6 @@
 {
-  "id": "d283e8c0-0761-475b-a495-0969b5caac6b",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "3946c2cb-71c9-4333-bb2a-dfc799ac2101",
+  "prevId": "8d3c8460-70d0-4af6-a642-26928c2d8522",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -138,6 +138,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "default_working_hours": {
+          "name": "default_working_hours",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -160,8 +166,8 @@
       },
       "checkConstraints": {}
     },
-    "public.schedules": {
-      "name": "schedules",
+    "public.schedule_overrides": {
+      "name": "schedule_overrides",
       "schema": "",
       "columns": {
         "id": {
@@ -176,37 +182,43 @@
           "primaryKey": false,
           "notNull": true
         },
-        "day_of_week": {
-          "name": "day_of_week",
-          "type": "integer",
+        "date": {
+          "name": "date",
+          "type": "date",
           "primaryKey": false,
           "notNull": true
         },
-        "start_time": {
-          "name": "start_time",
-          "type": "time",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "end_time": {
-          "name": "end_time",
-          "type": "time",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "is_available": {
-          "name": "is_available",
+        "is_working_day": {
+          "name": "is_working_day",
           "type": "boolean",
           "primaryKey": false,
+          "notNull": true
+        },
+        "available_slots": {
+          "name": "available_slots",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
           "notNull": false,
-          "default": true
+          "default": "now()"
         }
       },
       "indexes": {},
       "foreignKeys": {
-        "schedules_barber_id_barbers_id_fk": {
-          "name": "schedules_barber_id_barbers_id_fk",
-          "tableFrom": "schedules",
+        "schedule_overrides_barber_id_barbers_id_fk": {
+          "name": "schedule_overrides_barber_id_barbers_id_fk",
+          "tableFrom": "schedule_overrides",
           "tableTo": "barbers",
           "columnsFrom": [
             "barber_id"
@@ -246,7 +258,7 @@
         },
         "price": {
           "name": "price",
-          "type": "numeric(10, 2)",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true
         },

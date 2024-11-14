@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { createAppointment, getAppointments } from "@/lib/actions/appointments";
+import {
+  createAppointment,
+  getAppointments,
+} from "@/server/actions/appointments";
 
 export async function POST(request: Request) {
   try {

@@ -1,6 +1,6 @@
-import { db } from "@/db";
+import { db } from "@/drizzle";
 import { eq } from "drizzle-orm";
-import { services } from "@/db/schema";
+import { services } from "@/drizzle/schema";
 
 export async function getServices() {
   try {

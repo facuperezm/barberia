@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
-import AppointmentConfirmationEmail from "@/lib/emails/reservation-confirmation";
+import AppointmentConfirmationEmail from "@/components/emails/reservation-confirmation";
 import { env } from "@/env";
-import { db } from "@/db";
-import { barbers } from "@/db/schema";
+import { db } from "@/drizzle";
+import { barbers } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 
 const resend = new Resend(env.NEXT_PUBLIC_RESEND_API_KEY);

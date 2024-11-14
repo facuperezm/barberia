@@ -1,11 +1,12 @@
 "use server";
 
-import { db } from "@/db";
-import { barbers } from "@/db/schema";
+import { db } from "@/drizzle";
+import { barbers } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { type Barber } from "@/lib/types";
+import { auth } from "@clerk/nextjs/server";
 
 const barberSchema = z.object({
   name: z.string().min(1, "Name is required."),
@@ -14,21 +15,57 @@ const barberSchema = z.object({
   imageUrl: z.string().url("Invalid URL format.").optional(),
 });
 
-export async function deleteBarber(formData: FormData) {
-  const id = formData.get("id") as string;
+interface ActionResponse {
+  success: boolean;
+  barber?: Barber;
+  error?: string;
+  errors?: Record<string, string[]>;
+}
+
+/**
+ * Deletes a barber based on the provided ID.
+ * @param formData - The form data containing the barber ID.
+ * @returns An object indicating success or failure.
+ */
+export async function deleteBarber(
+  formData: FormData,
+): Promise<ActionResponse> {
+  const { userId } = await auth();
+
+  if (!userId) {
+    return { success: false, error: "Unauthorized access." };
+  }
+
+  const id = formData.get("id");
+
+  if (typeof id !== "string" || isNaN(parseInt(id))) {
+    return { success: false, error: "Invalid barber ID." };
+  }
 
   try {
-    await db.delete(barbers).where(eq(barbers.id, parseInt(id)));
+    const deleteResult = await db
+      .delete(barbers)
+      .where(eq(barbers.id, parseInt(id)));
+
+    if (deleteResult.count === 0) {
+      return { success: false, error: "Barber not found." };
+    }
+
     revalidatePath("/dashboard/barbers");
     return { success: true };
   } catch (error) {
     console.error("Error deleting barber:", error);
-    return { success: false, error: "Failed to delete barber" };
+    return { success: false, error: "Failed to delete barber." };
   }
 }
 
 export async function addBarber(state: unknown, formData: FormData) {
-  // Validate form data using Zod
+  const { userId } = await auth();
+
+  if (!userId) {
+    return { success: false, error: "Unauthorized access." };
+  }
+
   const inputValidation = barberSchema.safeParse({
     name: formData.get("name"),
     email: formData.get("email"),
@@ -58,10 +95,14 @@ export async function addBarber(state: unknown, formData: FormData) {
     return { success: true, barber: newBarber };
   } catch (error) {
     console.error("Error adding barber:", error);
-    throw new Error("Failed to add barber.");
+    return { success: false, error: "Failed to add barber." };
   }
 }
 
+/**
+ * Retrieves all barbers from the database.
+ * @returns An array of barber objects.
+ */
 export async function getBarbers(): Promise<Barber[]> {
   try {
     const allBarbers = await db.select().from(barbers);

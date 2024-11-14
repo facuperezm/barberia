@@ -10,10 +10,10 @@ import {
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Trash2 } from "lucide-react";
-import { getBarbers } from "@/lib/actions/barbers";
+import { getBarbers } from "@/server/actions/barbers";
 import ClientDialog from "./_components/client-dialog";
 import { type Barber } from "@/lib/types";
-import { deleteBarber } from "@/lib/actions/barbers";
+import { deleteBarber } from "@/server/actions/barbers";
 import { EmployeeList } from "./_components/employee-list";
 
 export default async function BarbersPage() {

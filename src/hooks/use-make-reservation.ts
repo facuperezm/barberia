@@ -1,5 +1,5 @@
-import { db } from "@/db";
-import { appointments } from "@/db/schema";
+import { db } from "@/drizzle";
+import { appointments } from "@/drizzle/schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface ReservationData {

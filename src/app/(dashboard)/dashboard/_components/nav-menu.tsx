@@ -1,5 +1,4 @@
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Scissors } from "lucide-react";
 import Link from "next/link";
 
 export default function NavMenu() {
@@ -7,9 +6,8 @@ export default function NavMenu() {
     <div className="border-b">
       <div className="flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-2">
-          <SidebarTrigger className="-ml-1 md:hidden" />
+          <SidebarTrigger className="-ml-1" />
           <div className="flex items-center gap-2 font-semibold">
-            <Scissors className="hidden size-6 md:block" />
             <h1 className="text-xl font-bold leading-tight">Barberia</h1>
           </div>
         </div>

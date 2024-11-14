@@ -7,8 +7,8 @@ import { DateTimeStep } from "@/app/book/_steps/date-time-step";
 import { CustomerStep } from "@/app/book/_steps/customer-step";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { useState } from "react";
 import { toast } from "sonner";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 const steps = [
@@ -44,7 +44,32 @@ export function BookingForm() {
     try {
       setIsSubmitting(true);
 
-      const response = await fetch("/api/appointment", {
+      // First, verify the slot is still available
+      const formattedDate = state.date?.toISOString().split("T")[0];
+      const availabilityResponse = await fetch(
+        `/api/availability?date=${formattedDate}&barberId=${state.barberId}`,
+      );
+
+      if (!availabilityResponse.ok) {
+        throw new Error("Failed to verify availability");
+      }
+
+      const slots = await availabilityResponse.json();
+      const isSlotAvailable = slots.find(
+        (slot: { time: string; available: boolean }) =>
+          slot.time === state.time && slot.available,
+      );
+
+      if (!isSlotAvailable) {
+        toast.error(
+          "This time slot is no longer available. Please select another time.",
+        );
+        setStep(2); // Go back to date/time selection
+        return;
+      }
+
+      // Proceed with booking
+      const response = await fetch("/api/appointments", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

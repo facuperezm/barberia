@@ -17,17 +17,19 @@ CREATE TABLE IF NOT EXISTS "barbers" (
 	"email" text NOT NULL,
 	"phone" text,
 	"image_url" text,
+	"default_working_hours" jsonb,
 	"created_at" timestamp DEFAULT now(),
 	CONSTRAINT "barbers_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "schedules" (
+CREATE TABLE IF NOT EXISTS "schedule_overrides" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"barber_id" integer NOT NULL,
-	"day_of_week" integer NOT NULL,
-	"start_time" time NOT NULL,
-	"end_time" time NOT NULL,
-	"is_available" boolean DEFAULT true
+	"date" date NOT NULL,
+	"is_working_day" boolean NOT NULL,
+	"available_slots" jsonb,
+	"reason" text,
+	"created_at" timestamp DEFAULT now()
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "services" (
@@ -52,7 +54,7 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "schedules" ADD CONSTRAINT "schedules_barber_id_barbers_id_fk" FOREIGN KEY ("barber_id") REFERENCES "public"."barbers"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "schedule_overrides" ADD CONSTRAINT "schedule_overrides_barber_id_barbers_id_fk" FOREIGN KEY ("barber_id") REFERENCES "public"."barbers"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
