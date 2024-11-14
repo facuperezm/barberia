@@ -1,8 +1,6 @@
-import { appointments, scheduleExceptions, schedules } from "@/drizzle/schema";
-
 import { db } from "@/drizzle";
 import { and, eq } from "drizzle-orm";
-import { barbers, services } from "@/drizzle/schema";
+import { appointments, barbers, services } from "@/drizzle/schema";
 import { z } from "zod";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";

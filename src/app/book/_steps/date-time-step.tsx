@@ -6,7 +6,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useMemo } from "react";
 import { format } from "date-fns";
-import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 
 interface TimeSlot {
@@ -45,8 +44,6 @@ export function DateTimeStep() {
     queryFn: () => fetchAvailableSlots(Number(state.barberId), formattedDate),
     enabled: !!state.date && !!state.barberId,
   });
-
-  console.log(isError);
 
   return (
     <div className="grid gap-6">
