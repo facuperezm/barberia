@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 import { db } from "@/drizzle";
-import { appointments, barbers, scheduleOverrides } from "@/drizzle/schema";
+import {
+  appointments,
+  barbers,
+  scheduleOverrides,
+  services,
+} from "@/drizzle/schema";
 import { and, eq, sql } from "drizzle-orm";
-import { format } from "date-fns";
+import { format, addMinutes, parse } from "date-fns";
 
 // Generate time slots between start and end times
 function generateTimeSlots(start: string, end: string, duration: number = 30) {
@@ -18,21 +23,17 @@ function generateTimeSlots(start: string, end: string, duration: number = 30) {
   return slots;
 }
 
-// Helper functions
-function parseTime(time: string): Date {
-  const parts = time.split(":");
-  const date = new Date();
-  date.setHours(Number(parts[0]), Number(parts[1]), 0, 0);
-  return date;
-}
+// Check if a time slot is blocked by an existing appointment
+function isSlotBlockedByAppointment(
+  slotTime: string,
+  appointment: { time: string; duration: number },
+): boolean {
+  const slotStart = parse(slotTime, "HH:mm", new Date());
+  const appointmentStart = parse(appointment.time, "HH:mm", new Date());
+  const appointmentEnd = addMinutes(appointmentStart, appointment.duration);
 
-function addMinutes(date: Date, minutes: number): Date {
-  return new Date(date.getTime() + minutes * 60000);
-}
-
-function isTimeWithinSchedule(time: string): boolean {
-  // Implement logic to check if the time is within the barber's working hours
-  return true;
+  // A slot is blocked if it starts during another appointment
+  return slotStart >= appointmentStart && slotStart < appointmentEnd;
 }
 
 export async function GET(request: Request) {
@@ -40,9 +41,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const date = searchParams.get("date");
     const barberId = searchParams.get("barberId");
-
-    const serviceDuration = Number(searchParams.get("duration")) || 30; // Default to 30 minutes
-    const slotsNeeded = Math.ceil(serviceDuration / 30);
+    const serviceId = searchParams.get("serviceId");
 
     if (!date || !barberId) {
       return NextResponse.json(
@@ -61,6 +60,18 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Barber not found" }, { status: 404 });
     }
 
+    // Get service duration if serviceId is provided
+    let serviceDuration = 30; // default duration
+    if (serviceId) {
+      const [service] = await db
+        .select()
+        .from(services)
+        .where(eq(services.id, parseInt(serviceId)));
+      if (service) {
+        serviceDuration = service.duration;
+      }
+    }
+
     const [override] = await db
       .select()
       .from(scheduleOverrides)
@@ -72,8 +83,7 @@ export async function GET(request: Request) {
       );
 
     // Get the day of week (0-6)
-    const dayOfWeek = new Date(date.toString()).getUTCDay();
-    console.log(dayOfWeek, "DAY OF WEEK according to date-fns");
+    const dayOfWeek = new Date(date).getDay().toString();
 
     // Determine available slots based on override or default schedule
     const availableTimeSlots: string[] = [];
@@ -83,7 +93,7 @@ export async function GET(request: Request) {
         return NextResponse.json([]);
       }
       // Use override slots
-      if (override.availableSlots) {
+      if (override.availableSlots && override.availableSlots.length > 0) {
         override.availableSlots.forEach((slot) => {
           availableTimeSlots.push(...generateTimeSlots(slot.start, slot.end));
         });
@@ -99,12 +109,14 @@ export async function GET(request: Request) {
       });
     }
 
-    // Get existing appointments
+    // Get existing appointments with their service durations
     const existingAppointments = await db
       .select({
         time: appointments.time,
+        duration: services.duration,
       })
       .from(appointments)
+      .leftJoin(services, eq(appointments.serviceId, services.id))
       .where(
         and(
           eq(appointments.barberId, parseInt(barberId)),
@@ -113,32 +125,29 @@ export async function GET(request: Request) {
         ),
       );
 
-    // Convert existing appointments to a Set for faster lookup
-    const bookedTimes = new Set(
-      existingAppointments.map((apt) =>
-        format(new Date(`1970-01-01T${apt.time}`), "HH:mm"),
-      ),
-    );
+    // Create the availability array considering service durations
+    const availability = availableTimeSlots.map((time) => {
+      // Check if this time slot is blocked by any existing appointment
+      const isBlocked = existingAppointments.some((apt) =>
+        isSlotBlockedByAppointment(time, {
+          time: apt.time,
+          duration: apt.duration || 30, // fallback to 30 minutes if duration is not set
+        }),
+      );
 
-    // Create the availability array
-    const availability = availableTimeSlots.map((slot) => {
-      let isAvailable = true;
-
-      for (let i = 0; i < slotsNeeded; i++) {
-        const timeToCheck = addMinutes(parseTime(slot), i * 30);
-        const formattedTime = format(timeToCheck, "HH:mm");
-        if (
-          bookedTimes.has(formattedTime) ||
-          !isTimeWithinSchedule(formattedTime)
-        ) {
-          isAvailable = false;
-          break;
-        }
-      }
+      // Also check if there's enough time for the requested service
+      const slotTime = parse(time, "HH:mm", new Date());
+      const serviceEndTime = addMinutes(slotTime, serviceDuration);
+      const lastPossibleSlot = parse(
+        availableTimeSlots[availableTimeSlots.length - 1],
+        "HH:mm",
+        new Date(),
+      );
+      const hasEnoughTime = serviceEndTime <= addMinutes(lastPossibleSlot, 30);
 
       return {
-        time: slot,
-        available: isAvailable,
+        time,
+        available: !isBlocked && hasEnoughTime,
       };
     });
 
