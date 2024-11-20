@@ -14,7 +14,7 @@ interface Service {
   description: string;
 }
 
-const fetchServices = async (): Promise<Service[]> => {
+const fetchServices = async () => {
   const response = await fetch("/api/services");
   return response.json();
 };
