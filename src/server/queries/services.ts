@@ -5,7 +5,6 @@ import { services } from "@/drizzle/schema";
 export async function getServices() {
   try {
     const allServices = await db.select().from(services);
-    console.log("allServices", allServices);
     return allServices;
   } catch (error) {
     console.error("Error fetching services:", error);
