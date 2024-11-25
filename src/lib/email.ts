@@ -1,46 +1,108 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
+import AppointmentConfirmationEmail from "@/emails/appointment-confirmation";
+import AppointmentReminderEmail from "@/emails/appointment-reminder";
+import FeedbackRequestEmail from "@/emails/feedback-request";
+import { format } from "date-fns";
 
-interface EmailParams {
-  firstName: string;
-  lastName: string;
-  date: string;
-  time: string;
-  service: string; // Service name
-  barber: string; // Barber name
-  email: string;
-}
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-export const sendConfirmationEmail = async ({
-  firstName,
-  lastName,
+export async function sendAppointmentConfirmation({
+  customerName,
+  customerEmail,
   date,
   time,
   service,
-  barber,
-  email,
-}: EmailParams) => {
-  const transporter = nodemailer.createTransport({
-    service: process.env.EMAIL_SERVICE, // e.g., 'Gmail'
-    auth: {
-      user: process.env.EMAIL_USER!,
-      pass: process.env.EMAIL_PASS!,
-    },
-  });
+  barberName,
+}: {
+  customerName: string;
+  customerEmail: string;
+  date: Date;
+  time: string;
+  service: string;
+  barberName: string;
+}) {
+  try {
+    await resend.emails.send({
+      from: "Modern Barbershop <appointments@modern-barbershop.com>",
+      to: customerEmail,
+      subject: "Appointment Confirmation - Modern Barbershop",
+      react: AppointmentConfirmationEmail({
+        customerName,
+        date: format(date, "EEEE, MMMM d, yyyy"),
+        time,
+        service,
+        barberName,
+      }),
+    });
+  } catch (error) {
+    console.error("Error sending confirmation email:", error);
+    throw error;
+  }
+}
 
-  const mailOptions = {
-    from: process.env.EMAIL_USER!,
-    to: email,
-    subject: "Confirmación de Tu Reserva",
-    html: `
-      <p>Hola ${firstName} ${lastName},</p>
-      <p>Tu reserva ha sido confirmada para el día ${date} a las ${time}.</p>
-      <p><strong>Servicio:</strong> ${service}</p>
-      <p><strong>Barbero:</strong> ${barber}</p>
-      <p>Si necesitas cambiar o cancelar tu cita, por favor contáctanos con al menos 24 horas de anticipación.</p>
-      <p>¡Esperamos verte pronto!</p>
-      <p>Saludos,<br />Equipo de Barberia</p>
-    `,
-  };
+export async function sendAppointmentReminder({
+  customerName,
+  customerEmail,
+  date,
+  time,
+  service,
+  barberName,
+}: {
+  customerName: string;
+  customerEmail: string;
+  date: Date;
+  time: string;
+  service: string;
+  barberName: string;
+}) {
+  try {
+    await resend.emails.send({
+      from: "Modern Barbershop <appointments@modern-barbershop.com>",
+      to: customerEmail,
+      subject: "Reminder: Your Appointment Tomorrow - Modern Barbershop",
+      react: AppointmentReminderEmail({
+        customerName,
+        date: format(date, "EEEE, MMMM d, yyyy"),
+        time,
+        service,
+        barberName,
+      }),
+    });
+  } catch (error) {
+    console.error("Error sending reminder email:", error);
+    throw error;
+  }
+}
 
-  await transporter.sendMail(mailOptions);
-};
+export async function sendFeedbackRequest({
+  customerName,
+  customerEmail,
+  date,
+  barberName,
+  appointmentId,
+}: {
+  customerName: string;
+  customerEmail: string;
+  date: Date;
+  barberName: string;
+  appointmentId: string;
+}) {
+  try {
+    const feedbackUrl = `${process.env.NEXT_PUBLIC_APP_URL}/feedback/${appointmentId}`;
+
+    await resend.emails.send({
+      from: "Modern Barbershop <feedback@modern-barbershop.com>",
+      to: customerEmail,
+      subject: "How was your visit to Modern Barbershop?",
+      react: FeedbackRequestEmail({
+        customerName,
+        date: format(date, "EEEE, MMMM d, yyyy"),
+        barberName,
+        feedbackUrl,
+      }),
+    });
+  } catch (error) {
+    console.error("Error sending feedback request:", error);
+    throw error;
+  }
+}
