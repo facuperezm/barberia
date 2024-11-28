@@ -6,34 +6,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
-
-// Mock data - replace with API call
-// const barbers = [
-//   {
-//     id: "1",
-//     name: "John Doe",
-//     image:
-//       "https://images.unsplash.com/photo-1618077360395-f3068be8e001?w=400&h=400&auto=format&fit=crop",
-//     specialty: "Classic Cuts",
-//   },
-//   {
-//     id: "2",
-//     name: "Jane Smith",
-//     image:
-//       "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?w=400&h=400&auto=format&fit=crop",
-//     specialty: "Modern Styles",
-//   },
-// ];
-type Barber = {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-  imageUrl: string;
-};
+import { getBarbers as getBarbersServer } from "@/server/actions/barbers";
+import { type Barber } from "@/lib/types";
 
 async function getBarbers(): Promise<Barber[]> {
-  const barbers = await fetch("/api/barber").then((res) => res.json());
+  // const barbers = await fetch("/api/barber").then((res) => res.json());
+  const barbers = await getBarbersServer();
   return barbers;
 }
 
@@ -65,7 +43,7 @@ export function BarberStep() {
             >
               <CardContent className="flex items-center gap-4 p-4">
                 <Avatar className="size-16">
-                  <AvatarImage src={barber.imageUrl} alt={barber.name} />
+                  <AvatarImage src={barber.imageUrl ?? ""} alt={barber.name} />
                   <AvatarFallback>{barber.name[0]}</AvatarFallback>
                 </Avatar>
                 <div>
