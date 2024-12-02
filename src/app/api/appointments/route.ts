@@ -1,8 +1,5 @@
 import { NextResponse } from "next/server";
-import {
-  createAppointment,
-  getAppointments,
-} from "@/server/actions/appointments";
+import { createAppointment } from "@/server/actions/appointments";
 
 export async function POST(request: Request) {
   try {
@@ -22,19 +19,19 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
-  try {
-    const result = await getAppointments();
+// export async function GET() {
+//   try {
+//     const result = await getAppointments();
 
-    if (!result.success) {
-      return NextResponse.json({ error: result.error }, { status: 400 });
-    }
+//     if (!result.success) {
+//       return NextResponse.json({ error: result.error }, { status: 400 });
+//     }
 
-    return NextResponse.json(result.appointments);
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to fetch appointments" },
-      { status: 500 },
-    );
-  }
-}
+//     return NextResponse.json(result.appointments);
+//   } catch (error) {
+//     return NextResponse.json(
+//       { error: "Failed to fetch appointments" },
+//       { status: 500 },
+//     );
+//   }
+// }

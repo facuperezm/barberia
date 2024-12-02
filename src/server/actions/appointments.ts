@@ -1,3 +1,4 @@
+"use server";
 import { db } from "@/drizzle";
 import { and, eq } from "drizzle-orm";
 import { appointments, barbers, services } from "@/drizzle/schema";

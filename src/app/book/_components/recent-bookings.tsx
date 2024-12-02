@@ -17,13 +17,40 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { format, startOfWeek, addDays } from "date-fns";
 import { TableSkeleton } from "@/app/(dashboard)/dashboard/_components/skeleton";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { AppointmentActions } from "./appointment-actions";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getAppointments } from "@/server/actions/appointments";
+import { updateAppointmentStatus } from "@/server/actions/appointments";
+
+// const updateBookingStatus = async ({
+//   id,
+//   status,
+// }: {
+//   id: number;
+//   status: Booking["status"];
+// }): Promise<{ success: boolean; error?: string; appointment?: Booking }> => {
+//   const response = await fetch(`/api/appointments/${id}`, {
+//     method: "PATCH",
+//     headers: {
+//       "Content-Type": "application/json",
+//     },
+//     body: JSON.stringify({ status }),
+//   });
+
+//   if (!response.ok) {
+//     const errorData = await response.json();
+//     return { success: false, error: errorData.error || "Unknown error" };
+//   }
+
+//   const appointment = await response.json();
+//   return { success: true, appointment };
+// };
 
 interface Booking {
   id: number;
@@ -46,36 +73,29 @@ const statusColors = {
 
 export function RecentBookings() {
   const [selectedDay, setSelectedDay] = useState<string>("all");
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    fetchBookings();
-  }, []);
+  const { data: bookings, isLoading } = useQuery({
+    queryKey: ["bookings"],
+    queryFn: () => getAppointments(),
+    staleTime: 1000 * 60 * 10, // 10 minutes
+  });
 
-  const fetchBookings = async () => {
-    try {
-      const response = await fetch("/api/appointments");
-      if (!response.ok) throw new Error("Failed to fetch bookings");
-      const data = await response.json();
-      setBookings(data);
-    } catch (error) {
-      console.error("Error fetching bookings:", error);
-      toast.error("Failed to load bookings. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const mutation = useMutation({
+    mutationFn: (params: { id: number; status: string }) =>
+      updateAppointmentStatus(params.id, params.status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["bookings"] });
+      toast.success("Booking status updated successfully.");
+    },
+    onError: () => {
+      toast.error("Failed to update booking status.");
+    },
+  });
 
   const handleStatusChange = (id: number, newStatus: string) => {
-    setBookings(
-      bookings.map((booking) =>
-        booking.id === id
-          ? { ...booking, status: newStatus as Booking["status"] }
-          : booking,
-      ),
-    );
+    mutation.mutate({ id, status: newStatus as Booking["status"] });
   };
 
   // Generate week days for the select dropdown
@@ -89,17 +109,20 @@ export function RecentBookings() {
     };
   });
 
-  const filteredBookings = bookings
-    .filter((booking) => selectedDay === "all" || booking.date === selectedDay)
-    .filter(
-      (booking) =>
-        searchTerm === "" ||
-        booking.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        booking.customerEmail
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        booking.customerPhone.includes(searchTerm),
-    );
+  const filteredBookings =
+    bookings?.appointments
+      ?.filter(
+        (booking) => selectedDay === "all" || booking.date === selectedDay,
+      )
+      .filter((booking) => {
+        const term = searchTerm.toLowerCase();
+        return (
+          searchTerm === "" ||
+          booking.customerName.toLowerCase().includes(term) ||
+          booking.customerEmail.toLowerCase().includes(term) ||
+          booking.customerPhone.includes(searchTerm)
+        );
+      }) || [];
 
   if (isLoading) {
     return (
@@ -182,14 +205,20 @@ export function RecentBookings() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={statusColors[booking.status]}>
+                      <Badge
+                        variant={
+                          statusColors[
+                            booking.status as keyof typeof statusColors
+                          ]
+                        }
+                      >
                         {booking.status}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <AppointmentActions
                         id={booking.id}
-                        status={booking.status}
+                        status={booking.status || "pending"}
                         onStatusChange={(newStatus) =>
                           handleStatusChange(booking.id, newStatus)
                         }

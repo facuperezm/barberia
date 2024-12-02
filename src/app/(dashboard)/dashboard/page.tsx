@@ -6,10 +6,28 @@ import { RecentBookings } from "@/app/book/_components/recent-bookings";
 import { getAppointments } from "@/server/queries/appointments";
 import { getServices } from "@/server/queries/services";
 import { CardSkeleton } from "./_components/skeleton";
+import { unstable_cache } from "next/cache";
+
+const cachedAppointments = unstable_cache(
+  async () => await getAppointments(),
+  ["appointments"],
+  {
+    revalidate: 3600,
+    tags: ["appointments"],
+  },
+);
+const cachedServices = unstable_cache(
+  async () => await getServices(),
+  ["services"],
+  {
+    revalidate: 3600,
+    tags: ["services"],
+  },
+);
 
 export default async function DashboardPage() {
-  const appointments = await getAppointments();
-  const services = await getServices();
+  const appointments = await cachedAppointments();
+  const services = await cachedServices();
 
   if (!appointments || !services) {
     return <CardSkeleton />;
