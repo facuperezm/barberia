@@ -18,13 +18,6 @@ export const barbers = pgTable("barbers", {
   email: text("email").notNull().unique(),
   phone: text("phone"),
   imageUrl: text("image_url"),
-  defaultWorkingHours: jsonb("default_working_hours").$type<{
-    [key: string]: {
-      // 0-6 for Sunday-Saturday
-      isWorking: boolean;
-      slots: { start: string; end: string }[];
-    };
-  }>(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -70,10 +63,30 @@ export const appointments = pgTable("appointments", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const workingHours = pgTable("working_hours", {
+  id: serial("id").primaryKey(),
+  barberId: integer("barber_id")
+    .references(() => barbers.id)
+    .notNull(), // Relación con el barbero
+  dayOfWeek: integer("day_of_week").notNull(), // 0 para Domingo, 1 para Lunes, etc.
+  startTime: time("start_time").notNull(), // Hora de inicio
+  endTime: time("end_time").notNull(), // Hora de fin
+  isWorking: boolean("is_working").default(true), // Indica si el barbero trabaja ese día
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Define relations
 export const barbersRelations = relations(barbers, ({ many }) => ({
   scheduleOverrides: many(scheduleOverrides),
   appointments: many(appointments),
+  workingHours: many(workingHours),
+}));
+
+export const workingHoursRelations = relations(workingHours, ({ one }) => ({
+  barber: one(barbers, {
+    fields: [workingHours.barberId],
+    references: [barbers.id],
+  }),
 }));
 
 export const servicesRelations = relations(services, ({ many }) => ({
