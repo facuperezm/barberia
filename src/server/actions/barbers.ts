@@ -22,11 +22,6 @@ interface ActionResponse {
   errors?: Record<string, string[]>;
 }
 
-/**
- * Deletes a barber based on the provided ID.
- * @param formData - The form data containing the barber ID.
- * @returns An object indicating success or failure.
- */
 export async function deleteBarber(
   formData: FormData,
 ): Promise<ActionResponse> {
@@ -99,10 +94,6 @@ export async function addBarber(state: unknown, formData: FormData) {
   }
 }
 
-/**
- * Retrieves all barbers from the database.
- * @returns An array of barber objects.
- */
 export async function getBarbers(): Promise<Barber[]> {
   try {
     const allBarbers = await db.select().from(barbers);
