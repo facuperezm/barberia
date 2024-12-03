@@ -2,7 +2,7 @@ import { DashboardHeader } from "@/app/(dashboard)/dashboard/_components/dashboa
 import { DashboardShell } from "@/app/(dashboard)/dashboard/_components/dashboard-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Clock, Scissors, Users } from "lucide-react";
-import { RecentBookings } from "@/app/book/_components/recent-bookings";
+import { RecentBookings } from "@/app/(dashboard)/dashboard/_components/recent-bookings";
 import { getAppointments } from "@/server/queries/appointments";
 import { getServices } from "@/server/queries/services";
 import { CardSkeleton } from "./_components/skeleton";
