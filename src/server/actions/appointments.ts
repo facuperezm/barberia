@@ -68,6 +68,7 @@ export async function createAppointment(
         .from(barbers)
         .where(eq(barbers.id, barberId))
         .limit(1);
+
       if (barber.length === 0) {
         throw new Error("Selected barber does not exist.");
       }
@@ -82,67 +83,6 @@ export async function createAppointment(
         throw new Error("Selected service does not exist.");
       }
 
-      // const selectedDate = new Date(formattedDate);
-      // const dayOfWeek = selectedDate.toLocaleDateString("en-US", {
-      //   weekday: "long",
-      // });
-
-      // const schedule = await tx
-      //   .select()
-      //   .from(schedules)
-      //   .where(
-      //     and(
-      //       eq(schedules.barberId, barberId),
-      //       eq(schedules.dayOfWeek, dayOfWeek),
-      //     ),
-      //   )
-      //   .limit(1);
-
-      // // Fetch any exceptions
-      // const exception = await tx
-      //   .select()
-      //   .from(scheduleExceptions)
-      //   .where(
-      //     and(
-      //       eq(scheduleExceptions.barberId, barberId),
-      //       eq(scheduleExceptions.date, formattedDate),
-      //     ),
-      //   )
-      //   .limit(1);
-
-      // if (exception.length > 0) {
-      //   if (!exception[0].isWorking) {
-      //     throw new Error("Barber is not available on the selected date.");
-      //   } else {
-      //     // If working with specific hours
-      //     if (exception[0].startTime && exception[0].endTime) {
-      //       if (
-      //         formattedTime < exception[0].startTime ||
-      //         formattedTime > exception[0].endTime
-      //       ) {
-      //         throw new Error(
-      //           "Selected time is outside the barber's available hours.",
-      //         );
-      //       }
-      //     }
-      //   }
-      // } else if (schedule.length > 0) {
-      //   // Check if the time is within regular schedule
-      //   if (
-      //     formattedTime < schedule[0].startTime! ||
-      //     formattedTime > schedule[0].endTime!
-      //   ) {
-      //     throw new Error(
-      //       "Selected time is outside the barber's regular working hours.",
-      //     );
-      //   }
-      // } else {
-      //   throw new Error(
-      //     "Barber does not have a schedule for the selected day.",
-      //   );
-      // }
-
-      // Check if the time slot is already booked
       const existingAppointment = await tx
         .select()
         .from(appointments)

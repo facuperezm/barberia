@@ -16,9 +16,10 @@ interface TimeSlot {
 const fetchAvailableSlots = async (
   barberId: number,
   formattedDate: string,
+  serviceId: number,
 ): Promise<TimeSlot[]> => {
   const response = await fetch(
-    `/api/availability?date=${formattedDate}&barberId=${barberId}`,
+    `/api/availability?date=${formattedDate}&barberId=${barberId}&serviceId=${serviceId}`,
   );
 
   if (!response.ok) {
@@ -41,9 +42,15 @@ export function DateTimeStep() {
     isError,
   } = useQuery<TimeSlot[], Error>({
     queryKey: ["availability", state.barberId, formattedDate],
-    queryFn: () => fetchAvailableSlots(Number(state.barberId), formattedDate),
-    enabled: !!state.date && !!state.barberId,
+    queryFn: () =>
+      fetchAvailableSlots(
+        Number(state.barberId),
+        formattedDate,
+        Number(state.serviceId),
+      ),
   });
+
+  console.log(availableSlots, "availableSlots");
 
   return (
     <div className="grid gap-6">
@@ -56,7 +63,6 @@ export function DateTimeStep() {
         className="rounded-md border"
         disabled={(date) => date < new Date()}
       />
-
       {state.date && (
         <div>
           <h3 className="mb-4 font-medium">Available Time Slots</h3>
@@ -70,27 +76,16 @@ export function DateTimeStep() {
                 </Card>
               ))}
             </div>
-          ) : isError ? (
-            <p className="text-center text-red-500">Error loading slots.</p>
           ) : availableSlots.length > 0 ? (
             <div className="grid grid-cols-3 gap-4">
               {availableSlots.map((slot) => (
                 <Card
                   key={slot.time}
                   className={cn(
-                    "cursor-pointer transition-colors",
-                    slot.available
-                      ? "hover:bg-accent"
-                      : "cursor-not-allowed opacity-50",
-                    state.time === slot.time &&
-                      slot.available &&
-                      "border-primary",
+                    "cursor-pointer transition-colors hover:bg-accent",
+                    state.time === slot.time && "border-primary",
                   )}
-                  onClick={() => {
-                    if (slot.available) {
-                      setState({ time: slot.time });
-                    }
-                  }}
+                  onClick={() => setState({ time: slot.time })}
                 >
                   <CardContent className="p-4 text-center">
                     <span className="text-sm font-medium">{slot.time}</span>

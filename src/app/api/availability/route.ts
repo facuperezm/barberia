@@ -33,22 +33,34 @@ function isSlotBlockedByAppointment(
   const appointmentEnd = addMinutes(appointmentStart, appointment.duration);
 
   // A slot is blocked if it starts during another appointment
-  return slotStart >= appointmentStart && slotStart < appointmentEnd;
+  // or if it falls within the duration of another appointment
+  const slotEnd = addMinutes(slotStart, 30); // Each slot is 30 minutes
+  return (
+    (slotStart >= appointmentStart && slotStart < appointmentEnd) ||
+    (slotEnd > appointmentStart && slotEnd <= appointmentEnd) ||
+    (slotStart <= appointmentStart && slotEnd >= appointmentEnd)
+  );
 }
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const date = searchParams.get("date");
+    const dateStr = searchParams.get("date");
     const barberId = searchParams.get("barberId");
     const serviceId = searchParams.get("serviceId");
 
-    if (!date || !barberId) {
+    if (!dateStr || !barberId) {
       return NextResponse.json(
         { error: "Date and barberId are required" },
         { status: 400 },
       );
     }
+
+    // Parse the date string to a Date object
+    const date = new Date(dateStr);
+
+    // Format date for database query (YYYY-MM-DD)
+    const formattedDate = format(date, "yyyy-MM-dd");
 
     // Get barber's default schedule and any overrides
     const [barber] = await db
@@ -78,15 +90,15 @@ export async function GET(request: Request) {
       .where(
         and(
           eq(scheduleOverrides.barberId, parseInt(barberId)),
-          eq(scheduleOverrides.date, date),
+          eq(scheduleOverrides.date, formattedDate),
         ),
       );
 
     // Get the day of week (0-6)
-    const dayOfWeek = new Date(date).getDay().toString();
+    const dayOfWeek = date.getDay().toString();
 
     // Determine available slots based on override or default schedule
-    const availableTimeSlots: string[] = [];
+    const timeSlots: string[] = [];
 
     if (override) {
       if (!override.isWorkingDay) {
@@ -95,7 +107,7 @@ export async function GET(request: Request) {
       // Use override slots
       if (override.availableSlots && override.availableSlots.length > 0) {
         override.availableSlots.forEach((slot) => {
-          availableTimeSlots.push(...generateTimeSlots(slot.start, slot.end));
+          timeSlots.push(...generateTimeSlots(slot.start, slot.end));
         });
       }
     } else {
@@ -105,7 +117,7 @@ export async function GET(request: Request) {
         return NextResponse.json([]);
       }
       defaultSchedule.slots.forEach((slot) => {
-        availableTimeSlots.push(...generateTimeSlots(slot.start, slot.end));
+        timeSlots.push(...generateTimeSlots(slot.start, slot.end));
       });
     }
 
@@ -120,38 +132,35 @@ export async function GET(request: Request) {
       .where(
         and(
           eq(appointments.barberId, parseInt(barberId)),
-          eq(appointments.date, date),
+          eq(appointments.date, formattedDate),
           sql`${appointments.status} != 'cancelled'`,
         ),
       );
 
-    // Create the availability array considering service durations
-    const availability = availableTimeSlots.map((time) => {
+    // Filter out unavailable slots
+    const availableSlots = timeSlots.filter((time) => {
       // Check if this time slot is blocked by any existing appointment
       const isBlocked = existingAppointments.some((apt) =>
         isSlotBlockedByAppointment(time, {
           time: apt.time,
-          duration: apt.duration || 30, // fallback to 30 minutes if duration is not set
+          duration: apt.duration || 30,
         }),
       );
 
-      // Also check if there's enough time for the requested service
+      // Check if there's enough time for the requested service
       const slotTime = parse(time, "HH:mm", new Date());
       const serviceEndTime = addMinutes(slotTime, serviceDuration);
       const lastPossibleSlot = parse(
-        availableTimeSlots[availableTimeSlots.length - 1],
+        timeSlots[timeSlots.length - 1],
         "HH:mm",
         new Date(),
       );
       const hasEnoughTime = serviceEndTime <= addMinutes(lastPossibleSlot, 30);
 
-      return {
-        time,
-        available: !isBlocked && hasEnoughTime,
-      };
+      return !isBlocked && hasEnoughTime;
     });
 
-    return NextResponse.json(availability);
+    return NextResponse.json(availableSlots.map((time) => ({ time })));
   } catch (error) {
     console.error("Error fetching availability:", error);
     return NextResponse.json(

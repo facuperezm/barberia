@@ -10,18 +10,18 @@ import { getBarbers as getBarbersServer } from "@/server/actions/barbers";
 import { type Barber } from "@/lib/types";
 
 async function getBarbers(): Promise<Barber[]> {
-  // const barbers = await fetch("/api/barber").then((res) => res.json());
   const barbers = await getBarbersServer();
   return barbers;
 }
 
 export function BarberStep() {
+  const { state, setState } = useBooking();
+
   const { data: barbers, isLoading } = useQuery<Barber[]>({
     queryKey: ["barbers", "book"],
     queryFn: getBarbers,
+    staleTime: 1000 * 60 * 10, // 10 minutes
   });
-
-  const { state, setState } = useBooking();
 
   return (
     <div className="grid gap-6">
@@ -48,9 +48,9 @@ export function BarberStep() {
                 </Avatar>
                 <div>
                   <h3 className="font-semibold">{barber.name}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {/* {barber.email} */}
-                  </p>
+                  {/* <p className="text-sm text-muted-foreground">
+                    {barber.email}
+                  </p> */}
                 </div>
               </CardContent>
             </Card>

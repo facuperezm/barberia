@@ -5,31 +5,21 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Scissors } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
+import { type Service } from "@/lib/types";
+import { getServices as getServicesServer } from "@/server/queries/services";
 
-interface Service {
-  id: string;
-  name: string;
-  duration: number;
-  price: number;
-  description: string;
+async function getServices(): Promise<Service[]> {
+  const services = await getServicesServer();
+  return services;
 }
-
-const fetchServices = async (): Promise<Service[]> => {
-  const response = await fetch("/api/services");
-  return response.json();
-};
 
 export function ServiceStep() {
   const { state, setState } = useBooking();
 
-  const {
-    data: services = [],
-    isLoading,
-    isError,
-  } = useQuery({
+  const { data: services, isLoading } = useQuery<Service[]>({
     queryKey: ["services"],
-    queryFn: fetchServices,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    queryFn: getServices,
+    staleTime: 1000 * 60 * 10, // 10 minutes
   });
 
   if (isLoading) {
@@ -52,25 +42,18 @@ export function ServiceStep() {
     );
   }
 
-  if (isError) {
-    return (
-      <p className="text-center text-red-500">
-        An error occurred while loading services.
-      </p>
-    );
-  }
   return (
     <div className="grid gap-4">
-      {services.map((service) => (
+      {services?.map((service) => (
         <Card
           key={service.id}
           className={cn(
             "cursor-pointer transition-colors hover:bg-accent",
-            state.serviceId === service.id && "border-primary",
+            state.serviceId === service.id.toString() && "border-primary",
           )}
           onClick={() =>
             setState({
-              serviceId: service.id,
+              serviceId: service.id.toString(),
             })
           }
         >
