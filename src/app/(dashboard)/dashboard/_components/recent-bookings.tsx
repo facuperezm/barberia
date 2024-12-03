@@ -23,46 +23,11 @@ import { TableSkeleton } from "@/app/(dashboard)/dashboard/_components/skeleton"
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import { AppointmentActions } from "./appointment-actions";
+import { AppointmentActions } from "../../../book/_components/appointment-actions";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAppointments } from "@/server/actions/appointments";
 import { updateAppointmentStatus } from "@/server/actions/appointments";
-
-// const updateBookingStatus = async ({
-//   id,
-//   status,
-// }: {
-//   id: number;
-//   status: Booking["status"];
-// }): Promise<{ success: boolean; error?: string; appointment?: Booking }> => {
-//   const response = await fetch(`/api/appointments/${id}`, {
-//     method: "PATCH",
-//     headers: {
-//       "Content-Type": "application/json",
-//     },
-//     body: JSON.stringify({ status }),
-//   });
-
-//   if (!response.ok) {
-//     const errorData = await response.json();
-//     return { success: false, error: errorData.error || "Unknown error" };
-//   }
-
-//   const appointment = await response.json();
-//   return { success: true, appointment };
-// };
-
-interface Booking {
-  id: number;
-  customerName: string;
-  service: string;
-  barber: string;
-  date: string;
-  time: string;
-  status: "pending" | "confirmed" | "cancelled" | "completed";
-  customerEmail: string;
-  customerPhone: string;
-}
+import { type Booking } from "@/lib/types";
 
 const statusColors = {
   confirmed: "default",

@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardShell } from "./_components/dashboard-shell";
-import { RecentBookings } from "@/app/book/_components/recent-bookings";
+import { RecentBookings } from "@/app/(dashboard)/dashboard/_components/recent-bookings";
 import { Calendar, Clock, Scissors, Users } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
