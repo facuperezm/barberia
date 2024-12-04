@@ -1,11 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/drizzle";
-import {
-  appointments,
-  barbers,
-  scheduleOverrides,
-  services,
-} from "@/drizzle/schema";
+import { appointments, scheduleOverrides, services } from "@/drizzle/schema";
 import { and, eq, sql } from "drizzle-orm";
 import { format, addMinutes, parse } from "date-fns";
 
@@ -27,19 +22,37 @@ function generateTimeSlots(start: string, end: string, duration: number = 30) {
 function isSlotBlockedByAppointment(
   slotTime: string,
   appointment: { time: string; duration: number },
+  slotDuration: number,
 ): boolean {
+  // Parse slot start time
   const slotStart = parse(slotTime, "HH:mm", new Date());
+
+  // Parse appointment start time
   const appointmentStart = parse(appointment.time, "HH:mm", new Date());
+
+  // Calculate appointment end time
   const appointmentEnd = addMinutes(appointmentStart, appointment.duration);
 
-  // A slot is blocked if it starts during another appointment
-  // or if it falls within the duration of another appointment
-  const slotEnd = addMinutes(slotStart, 30); // Each slot is 30 minutes
-  return (
+  // Calculate slot end time
+  const slotEnd = addMinutes(slotStart, slotDuration);
+
+  // Determine if the slot is blocked
+  const isBlocked =
     (slotStart >= appointmentStart && slotStart < appointmentEnd) ||
     (slotEnd > appointmentStart && slotEnd <= appointmentEnd) ||
-    (slotStart <= appointmentStart && slotEnd >= appointmentEnd)
+    (slotStart <= appointmentStart && slotEnd >= appointmentEnd);
+
+  console.log("test");
+  console.log(
+    `Checking slot ${slotTime} - ${format(slotEnd, "HH:mm")} against appointment at ${format(
+      appointmentStart,
+      "HH:mm",
+    )} for duration ${appointment.duration} minutes: ${
+      isBlocked ? "Blocked" : "Available"
+    }`,
   );
+
+  return isBlocked;
 }
 
 export async function GET(request: Request) {
@@ -47,11 +60,12 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const dateStr = searchParams.get("date");
     const barberId = searchParams.get("barberId");
-    const serviceId = searchParams.get("serviceId");
+    const serviceId = searchParams.get("serviceId"); // Ensure serviceId is captured
 
-    if (!dateStr || !barberId) {
+    if (!dateStr || !barberId || !serviceId) {
+      // Updated validation
       return NextResponse.json(
-        { error: "Date and barberId are required" },
+        { error: "Date, barberId, and serviceId are required" },
         { status: 400 },
       );
     }
@@ -60,31 +74,10 @@ export async function GET(request: Request) {
     const date = new Date(dateStr);
 
     // Format date for database query (YYYY-MM-DD)
-    const formattedDate = format(date, "yyyy-MM-dd");
+    const formattedDate = format(dateStr, "yyyy-MM-dd");
 
-    // Get barber's default schedule and any overrides
-    const [barber] = await db
-      .select()
-      .from(barbers)
-      .where(eq(barbers.id, parseInt(barberId)));
-
-    if (!barber) {
-      return NextResponse.json({ error: "Barber not found" }, { status: 404 });
-    }
-
-    // Get service duration if serviceId is provided
-    let serviceDuration = 30; // default duration
-    if (serviceId) {
-      const [service] = await db
-        .select()
-        .from(services)
-        .where(eq(services.id, parseInt(serviceId)));
-      if (service) {
-        serviceDuration = service.duration;
-      }
-    }
-
-    const [override] = await db
+    // Fetch barber's default schedule for the day
+    const defaultSchedule = await db
       .select()
       .from(scheduleOverrides)
       .where(
@@ -94,73 +87,81 @@ export async function GET(request: Request) {
         ),
       );
 
-    // Get the day of week (0-6)
-    const dayOfWeek = date.getDay().toString();
+    let isWorkingDay = true;
+    let workingHours = { start: "09:00", end: "17:00" }; // Default hours
 
-    // Determine available slots based on override or default schedule
-    const timeSlots: string[] = [];
-
-    if (override) {
-      if (!override.isWorkingDay) {
-        return NextResponse.json([]);
-      }
-      // Use override slots
-      if (override.availableSlots && override.availableSlots.length > 0) {
-        override.availableSlots.forEach((slot) => {
-          timeSlots.push(...generateTimeSlots(slot.start, slot.end));
-        });
+    if (defaultSchedule.length > 0) {
+      const override = defaultSchedule[0];
+      isWorkingDay = override.isWorkingDay;
+      if (
+        isWorkingDay &&
+        override.availableSlots &&
+        override.availableSlots.length > 0
+      ) {
+        workingHours = {
+          start: override.availableSlots[0].start,
+          end: override.availableSlots[0].end,
+        };
       }
     } else {
-      // Use default working hours
-      const defaultSchedule = barber.defaultWorkingHours?.[dayOfWeek];
-      if (!defaultSchedule?.isWorking) {
-        return NextResponse.json([]);
-      }
-      defaultSchedule.slots.forEach((slot) => {
-        timeSlots.push(...generateTimeSlots(slot.start, slot.end));
-      });
+      // If no override, fetch from barbers table
+      // (Implement fetching from barbers table if needed)
     }
 
+    if (!isWorkingDay) {
+      // If it's not a working day, return empty array
+      return NextResponse.json([]);
+    }
+
+    // Get service duration based on serviceId
+    let serviceDuration = 30; // default duration
+    const [service] = await db
+      .select()
+      .from(services)
+      .where(eq(services.id, parseInt(serviceId)));
+    if (service) {
+      serviceDuration = service.duration;
+    } else {
+      console.warn(
+        `Service with ID ${serviceId} not found. Using default duration.`,
+      );
+    }
+
+    // Generate all possible time slots based on working hours and service duration
+    const timeSlots = generateTimeSlots(
+      workingHours.start,
+      workingHours.end,
+      serviceDuration,
+    );
+
     // Get existing appointments with their service durations
-    const existingAppointments = await db
-      .select({
-        time: appointments.time,
-        duration: services.duration,
-      })
-      .from(appointments)
-      .leftJoin(services, eq(appointments.serviceId, services.id))
-      .where(
-        and(
-          eq(appointments.barberId, parseInt(barberId)),
-          eq(appointments.date, formattedDate),
-          sql`${appointments.status} != 'cancelled'`,
-        ),
-      );
-
-    // Filter out unavailable slots
-    const availableSlots = timeSlots.filter((time) => {
-      // Check if this time slot is blocked by any existing appointment
-      const isBlocked = existingAppointments.some((apt) =>
-        isSlotBlockedByAppointment(time, {
-          time: apt.time,
-          duration: apt.duration || 30,
-        }),
-      );
-
-      // Check if there's enough time for the requested service
-      const slotTime = parse(time, "HH:mm", new Date());
-      const serviceEndTime = addMinutes(slotTime, serviceDuration);
-      const lastPossibleSlot = parse(
-        timeSlots[timeSlots.length - 1],
-        "HH:mm",
-        new Date(),
-      );
-      const hasEnoughTime = serviceEndTime <= addMinutes(lastPossibleSlot, 30);
-
-      return !isBlocked && hasEnoughTime;
+    const existingAppointments = await db.query.appointments.findMany({
+      where: eq(appointments.date, dateStr.toString()),
     });
 
-    return NextResponse.json(availableSlots.map((time) => ({ time })));
+    // Log existing appointments for debugging
+    console.log("Existing Appointments:", existingAppointments);
+
+    // Map slots to include availability
+    const slotsWithAvailability = timeSlots.map((time) => {
+      const isBlocked = existingAppointments.some((apt) => {
+        // Strip seconds from appointment time
+        const appointmentTime = apt.time.slice(0, 5); // 'HH:mm'
+
+        return isSlotBlockedByAppointment(
+          time,
+          {
+            time: appointmentTime,
+            duration: serviceDuration,
+          },
+          serviceDuration,
+        );
+      });
+
+      return { time, available: !isBlocked };
+    });
+
+    return NextResponse.json(slotsWithAvailability);
   } catch (error) {
     console.error("Error fetching availability:", error);
     return NextResponse.json(

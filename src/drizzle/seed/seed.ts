@@ -3,6 +3,7 @@ import {
   services,
   scheduleOverrides,
   appointments,
+  workingHours,
 } from "@/drizzle/schema";
 import { db } from "@/drizzle";
 import { faker } from "@faker-js/faker";
@@ -13,10 +14,11 @@ async function seed() {
     // It's a good practice to clear existing data to prevent duplication.
     await db.delete(appointments).execute();
     await db.delete(scheduleOverrides).execute();
+    await db.delete(workingHours).execute();
     await db.delete(services).execute();
     await db.delete(barbers).execute();
 
-    // **2. Seed Barbers with Default Working Hours**
+    // **2. Seed Barbers**
     const barbersData = [
       {
         name: "John Doe",
@@ -24,36 +26,6 @@ async function seed() {
         phone: "555-1234",
         imageUrl:
           "https://images.unsplash.com/photo-1618077360395-f3068be8e001?w=400&h=400&auto=format&fit=crop",
-        defaultWorkingHours: {
-          Monday: {
-            isWorking: true,
-            slots: [{ start: "09:00:00", end: "17:00:00" }],
-          },
-          Tuesday: {
-            isWorking: true,
-            slots: [{ start: "09:00:00", end: "17:00:00" }],
-          },
-          Wednesday: {
-            isWorking: true,
-            slots: [{ start: "09:00:00", end: "17:00:00" }],
-          },
-          Thursday: {
-            isWorking: true,
-            slots: [{ start: "09:00:00", end: "17:00:00" }],
-          },
-          Friday: {
-            isWorking: true,
-            slots: [{ start: "09:00:00", end: "17:00:00" }],
-          },
-          Saturday: {
-            isWorking: false,
-            slots: [],
-          },
-          Sunday: {
-            isWorking: false,
-            slots: [],
-          },
-        },
       },
       {
         name: "Jane Smith",
@@ -61,36 +33,6 @@ async function seed() {
         phone: "555-5678",
         imageUrl:
           "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?w=400&h=400&auto=format&fit=crop",
-        defaultWorkingHours: {
-          Monday: {
-            isWorking: false,
-            slots: [],
-          },
-          Tuesday: {
-            isWorking: true,
-            slots: [{ start: "10:00:00", end: "18:00:00" }],
-          },
-          Wednesday: {
-            isWorking: true,
-            slots: [{ start: "10:00:00", end: "18:00:00" }],
-          },
-          Thursday: {
-            isWorking: true,
-            slots: [{ start: "10:00:00", end: "18:00:00" }],
-          },
-          Friday: {
-            isWorking: true,
-            slots: [{ start: "10:00:00", end: "18:00:00" }],
-          },
-          Saturday: {
-            isWorking: true,
-            slots: [{ start: "10:00:00", end: "18:00:00" }],
-          },
-          Sunday: {
-            isWorking: false,
-            slots: [],
-          },
-        },
       },
     ];
 
@@ -99,24 +41,92 @@ async function seed() {
       .values(barbersData)
       .returning();
 
-    // **3. Seed Services**
+    // **3. Seed Working Hours**
+    const workingHoursData = insertedBarbers.flatMap((barber) => {
+      const isJohn = barber.name === "John Doe";
+      const isJane = barber.name === "Jane Smith";
+
+      const defaultHours = isJohn
+        ? {
+            Monday: {
+              isWorking: true,
+              slots: [{ start_time: "09:00:00", end_time: "17:00:00" }],
+            },
+            Tuesday: {
+              isWorking: true,
+              slots: [{ start_time: "09:00:00", end_time: "17:00:00" }],
+            },
+            Wednesday: {
+              isWorking: true,
+              slots: [{ start_time: "09:00:00", end_time: "17:00:00" }],
+            },
+            Thursday: {
+              isWorking: true,
+              slots: [{ start_time: "09:00:00", end_time: "17:00:00" }],
+            },
+            Friday: {
+              isWorking: true,
+              slots: [{ start_time: "09:00:00", end_time: "17:00:00" }],
+            },
+            Saturday: { isWorking: false, slots: [] },
+            Sunday: { isWorking: false, slots: [] },
+          }
+        : {
+            Monday: { isWorking: false, slots: [] },
+            Tuesday: {
+              isWorking: true,
+              slots: [{ start_time: "10:00:00", end_time: "18:00:00" }],
+            },
+            Wednesday: {
+              isWorking: true,
+              slots: [{ start_time: "10:00:00", end_time: "18:00:00" }],
+            },
+            Thursday: {
+              isWorking: true,
+              slots: [{ start_time: "10:00:00", end_time: "18:00:00" }],
+            },
+            Friday: {
+              isWorking: true,
+              slots: [{ start_time: "10:00:00", end_time: "18:00:00" }],
+            },
+            Saturday: {
+              isWorking: true,
+              slots: [{ start_time: "10:00:00", end_time: "18:00:00" }],
+            },
+            Sunday: { isWorking: false, slots: [] },
+          };
+
+      return Object.entries(defaultHours).map(
+        ([day, { isWorking, slots }]) => ({
+          barberId: barber.id,
+          dayOfWeek: getDayOfWeekNumber(day),
+          startTime: slots[0]?.start_time || "00:00:00",
+          endTime: slots[0]?.end_time || "00:00:00",
+          isWorking,
+        }),
+      );
+    });
+
+    await db.insert(workingHours).values(workingHoursData).execute();
+
+    // **4. Seed Services**
     const servicesData = [
       {
         name: "Classic Haircut",
         duration: 30,
-        price: 30.0,
+        price: 30, // Changed from 30.0 to 30 to match integer type
         description: "Traditional haircut with styling",
       },
       {
         name: "Beard Trim",
         duration: 20,
-        price: 20.0,
+        price: 20, // Changed from 20.0 to 20
         description: "Professional beard grooming",
       },
       {
         name: "Full Service",
         duration: 60,
-        price: 50.0,
+        price: 50, // Changed from 50.0 to 50
         description: "Haircut, beard trim, and styling",
       },
     ];
@@ -126,7 +136,7 @@ async function seed() {
       .values(servicesData)
       .returning();
 
-    // **4. Seed Schedule Overrides**
+    // **5. Seed Schedule Overrides**
     const scheduleOverridesData = [
       {
         barberId: insertedBarbers.find((b) => b.name === "John Doe")!.id,
@@ -168,7 +178,7 @@ async function seed() {
       .values([...scheduleOverridesData, ...dynamicOverrides])
       .execute();
 
-    // **5. Seed Appointments**
+    // **6. Seed Appointments**
     const appointmentsData = [
       {
         barberId: insertedBarbers.find((b) => b.name === "John Doe")!.id,
@@ -177,7 +187,7 @@ async function seed() {
         customerName: "Alice Johnson",
         customerEmail: "alice.johnson@example.com",
         customerPhone: "555-9012",
-        date: "2023-11-13", // Changed from Date object to string
+        date: "2023-11-13",
         time: "09:00:00",
         status: "confirmed",
       },
@@ -187,7 +197,7 @@ async function seed() {
         customerName: "Bob Williams",
         customerEmail: "bob.williams@example.com",
         customerPhone: "555-3456",
-        date: "2023-11-13", // Changed from Date object to string
+        date: "2023-11-13",
         time: "10:00:00",
         status: "pending",
       },
@@ -197,7 +207,7 @@ async function seed() {
         customerName: "Charlie Brown",
         customerEmail: "charlie.brown@example.com",
         customerPhone: "555-7890",
-        date: "2023-11-14", // Changed from Date object to string
+        date: "2023-11-14",
         time: "11:00:00",
         status: "confirmed",
       },
@@ -211,6 +221,19 @@ async function seed() {
   } finally {
     // Optional: Close the database connection if necessary
   }
+}
+
+function getDayOfWeekNumber(day: string): number {
+  const days: Record<string, number> = {
+    Sunday: 0,
+    Monday: 1,
+    Tuesday: 2,
+    Wednesday: 3,
+    Thursday: 4,
+    Friday: 5,
+    Saturday: 6,
+  };
+  return days[day] ?? 0;
 }
 
 seed();

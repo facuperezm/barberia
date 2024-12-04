@@ -47,7 +47,7 @@ export function BookingForm() {
       // First, verify the slot is still available
       const formattedDate = state.date?.toISOString().split("T")[0];
       const availabilityResponse = await fetch(
-        `/api/availability?date=${formattedDate}&barberId=${state.barberId}`,
+        `/api/availability?date=${formattedDate}&barberId=${state.barberId}&serviceId=${state.serviceId}`,
       );
 
       if (!availabilityResponse.ok) {

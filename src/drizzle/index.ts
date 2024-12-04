@@ -11,5 +11,5 @@ export const connection = postgres(
 );
 export const db = drizzle(connection, {
   schema,
-  logger: true,
+  logger: false,
 });

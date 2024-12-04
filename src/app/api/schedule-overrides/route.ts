@@ -15,7 +15,6 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
-    console.log("barberId", parsedBarberId);
     // Check if barberId exists
     const barber = await db
       .select()
@@ -41,7 +40,6 @@ export async function POST(request: Request) {
       })
       .returning();
 
-    console.log("override", override);
     return NextResponse.json(override);
   } catch (error) {
     console.error("Error creating schedule override:", error);

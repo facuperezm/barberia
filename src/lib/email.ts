@@ -1,7 +1,7 @@
 import { Resend } from "resend";
-import AppointmentConfirmationEmail from "@/emails/appointment-confirmation";
-import AppointmentReminderEmail from "@/emails/appointment-reminder";
-import FeedbackRequestEmail from "@/emails/feedback-request";
+import AppointmentConfirmationEmail from "@/components/emails/appointment-confirmation";
+import AppointmentReminderEmail from "@/components/emails/appointment-reminder";
+import FeedbackRequestEmail from "@/components/emails/feedback-request";
 import { format } from "date-fns";
 
 const resend = new Resend(process.env.RESEND_API_KEY);

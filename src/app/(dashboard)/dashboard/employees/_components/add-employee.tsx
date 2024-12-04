@@ -39,7 +39,6 @@ export function AddEmployeeDialog({
 
   const handleSubmit = () => {
     // Handle employee creation
-    console.log("Creating employee:", formData);
     onOpenChange(false);
   };
 

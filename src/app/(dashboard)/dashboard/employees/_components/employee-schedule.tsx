@@ -125,10 +125,7 @@ export function EmployeeSchedule() {
 
   const handleSaveSchedule = () => {
     // Here you would typically save to your backend
-    console.log("Saving schedule:", {
-      employeeId: selectedEmployee,
-      schedule: workingHours,
-    });
+
     toast.success("Schedule updated successfully");
   };
 

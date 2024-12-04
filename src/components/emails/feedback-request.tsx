@@ -41,8 +41,8 @@ export default function FeedbackRequestEmail({
               enjoyed your service with {barberName}.
             </Text>
             <Text className="mb-6 text-gray-700">
-              We'd love to hear about your experience. Your feedback helps us
-              improve our services.
+              We&apos;d love to hear about your experience. Your feedback helps
+              us us improve our services.
             </Text>
             <Section className="mb-8 text-center">
               <Button

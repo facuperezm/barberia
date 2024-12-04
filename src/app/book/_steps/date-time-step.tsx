@@ -41,16 +41,15 @@ export function DateTimeStep() {
     isLoading,
     isError,
   } = useQuery<TimeSlot[], Error>({
-    queryKey: ["availability", state.barberId, formattedDate],
+    queryKey: ["availability", state.barberId, formattedDate, state.serviceId], // Added serviceId to queryKey
     queryFn: () =>
       fetchAvailableSlots(
         Number(state.barberId),
         formattedDate,
         Number(state.serviceId),
       ),
+    enabled: !!state.barberId && !!formattedDate && !!state.serviceId, // Ensure all params are present
   });
-
-  console.log(availableSlots, "availableSlots");
 
   return (
     <div className="grid gap-6">
@@ -82,10 +81,17 @@ export function DateTimeStep() {
                 <Card
                   key={slot.time}
                   className={cn(
-                    "cursor-pointer transition-colors hover:bg-accent",
+                    "transition-colors",
+                    slot.available
+                      ? "cursor-pointer hover:bg-accent"
+                      : "cursor-not-allowed bg-gray-200",
                     state.time === slot.time && "border-primary",
                   )}
-                  onClick={() => setState({ time: slot.time })}
+                  onClick={() => {
+                    if (slot.available) {
+                      setState({ time: slot.time });
+                    }
+                  }}
                 >
                   <CardContent className="p-4 text-center">
                     <span className="text-sm font-medium">{slot.time}</span>

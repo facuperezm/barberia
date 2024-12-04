@@ -23,8 +23,6 @@ export async function POST(request: Request) {
         where: eq(barbers.id, barberId),
       });
 
-      console.log(barber, serviceId);
-
       const date = new Date(start).toLocaleDateString();
       const time = new Date(start).toLocaleTimeString([], {
         hour: "2-digit",
