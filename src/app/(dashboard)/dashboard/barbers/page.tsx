@@ -24,7 +24,9 @@ export default async function BarbersPage() {
       <DashboardHeader heading="Barbers" description="Manage your barber team">
         <ClientDialog />
       </DashboardHeader>
-      <EmployeeList />
+      <div className="px-6">
+        <EmployeeList />
+      </div>
       <div className="grid gap-4 p-4 md:grid-cols-2 lg:grid-cols-3">
         {barbers?.map((barber: Barber) => (
           <Card key={barber.id}>

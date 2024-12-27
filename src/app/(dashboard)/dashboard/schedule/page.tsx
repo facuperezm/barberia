@@ -12,7 +12,7 @@ export default function SchedulePage() {
       >
         <ManageScheduleDialog />
       </DashboardHeader>
-      <div className="p-4">
+      <div className="p-6">
         <EmployeeSchedule />
       </div>
     </DashboardShell>

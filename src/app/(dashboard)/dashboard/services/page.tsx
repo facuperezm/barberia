@@ -14,7 +14,7 @@ export default async function ServicesPage() {
         heading="Services"
         description="Manage your service offerings and prices"
       />
-      <div className="grid gap-4 p-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 p-6 md:grid-cols-2 lg:grid-cols-3">
         {services.map((service) => (
           <Card key={service.id}>
             <CardHeader>

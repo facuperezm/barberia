@@ -4,7 +4,7 @@ import Link from "next/link";
 export default function NavMenu() {
   return (
     <div className="border-b">
-      <div className="flex h-16 items-center justify-between px-4">
+      <div className="flex h-16 items-center justify-between px-6">
         <div className="flex items-center gap-2">
           <SidebarTrigger className="-ml-1" />
           <div className="flex items-center gap-2 font-semibold">
