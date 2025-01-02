@@ -26,9 +26,6 @@ The goal of this project is to create a robust application that allows barbersho
 - **React.js:** For building a dynamic and responsive user interface.
 - **Next.js 15:** Modern framework for server-side rendering and routing.
 - **Tanstack Query:** For efficient data fetching, caching, and state management.
-- **Vite.js:** Frontend build tool for fast development experiences.
-- **Node.js:** Backend runtime environment providing flexibility and scalability.
-- **Fastify:** Lightweight and high-performance server framework.
 - **Drizzle ORM:** Type-safe ORM for database interactions.
 - **Zod:** Schema validation for robust data handling.
 - **Date-FNS:** Utility library for date manipulation.
@@ -44,28 +41,6 @@ One of the significant challenges was implementing a dynamic employee management
 ### Scheduling with Time Slot Management
 
 Creating a flexible scheduling system that accommodates multiple employees and their available time slots was complex. Implementing CRUD operations for time slots and ensuring real-time availability required careful planning and robust backend logic.
-
-### Real-Time Data Fetching
-
-Integrating React Query to handle real-time data fetching and caching presented its own set of challenges. Ensuring data consistency across different components and optimizing query performance were crucial to provide a smooth user experience.
-
-### User Authentication and Authorization
-
-Securing the application by implementing user authentication and role-based access control was essential. This ensured that only authorized personnel could manage employee data and schedules, maintaining data integrity and privacy.
-
-## Solution Overview
-
-### Backend Development with Fastify and Drizzle ORM
-
-The backend was built using Fastify for its high performance and ease of use. Drizzle ORM provided a type-safe way to interact with the database, ensuring reliable and maintainable code. API endpoints were designed to handle employee management, scheduling, and appointment bookings efficiently.
-
-### Frontend Development with Next.js and React.js
-
-On the frontend, Next.js 15's App Router was utilized to manage routing and server-side rendering, enhancing SEO and performance. React Query was integrated to manage data fetching and caching, providing a responsive and dynamic user experience.
-
-### State Management and Validation
-
-State management was handled primarily through React's built-in hooks and Tanstack Query's caching mechanisms. Zod was used for schema validation, ensuring that all data interactions were robust and error-free.
 
 ## Installation
 
