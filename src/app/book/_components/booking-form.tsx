@@ -44,7 +44,7 @@ export function BookingForm() {
     try {
       setIsSubmitting(true);
 
-      // First, verify the slot is still available
+      // verify the slot is still available
       const formattedDate = state.date?.toISOString().split("T")[0];
       const availabilityResponse = await fetch(
         `/api/availability?date=${formattedDate}&barberId=${state.barberId}&serviceId=${state.serviceId}`,
@@ -68,7 +68,6 @@ export function BookingForm() {
         return;
       }
 
-      // Proceed with booking
       const response = await fetch("/api/appointments", {
         method: "POST",
         headers: {

@@ -8,10 +8,10 @@ import {
   date,
   time,
   jsonb,
+  pgEnum,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
-// Barbers table
 export const barbers = pgTable("barbers", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -21,7 +21,6 @@ export const barbers = pgTable("barbers", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Schedule overrides table
 export const scheduleOverrides = pgTable("schedule_overrides", {
   id: serial("id").primaryKey(),
   barberId: integer("barber_id")
@@ -35,7 +34,6 @@ export const scheduleOverrides = pgTable("schedule_overrides", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Services table
 export const services = pgTable("services", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -45,7 +43,13 @@ export const services = pgTable("services", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Appointments table
+export const appointmentStatus = pgEnum("appointment_status", [
+  "pending",
+  "confirmed",
+  "cancelled",
+  "completed",
+]);
+
 export const appointments = pgTable("appointments", {
   id: serial("id").primaryKey(),
   barberId: integer("barber_id")
@@ -59,7 +63,7 @@ export const appointments = pgTable("appointments", {
   customerPhone: text("customer_phone").notNull(),
   date: date("date").notNull(),
   time: time("time").notNull(),
-  status: text("status").default("pending"), // pending, confirmed, cancelled, completed
+  status: appointmentStatus("status").default("pending"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -67,15 +71,14 @@ export const workingHours = pgTable("working_hours", {
   id: serial("id").primaryKey(),
   barberId: integer("barber_id")
     .references(() => barbers.id)
-    .notNull(), // Relación con el barbero
-  dayOfWeek: integer("day_of_week").notNull(), // 0 para Domingo, 1 para Lunes, etc.
-  startTime: time("start_time").notNull(), // Hora de inicio
-  endTime: time("end_time").notNull(), // Hora de fin
-  isWorking: boolean("is_working").default(true), // Indica si el barbero trabaja ese día
+    .notNull(),
+  dayOfWeek: integer("day_of_week").notNull(),
+  startTime: time("start_time").notNull(),
+  endTime: time("end_time").notNull(),
+  isWorking: boolean("is_working").default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Define relations
 export const barbersRelations = relations(barbers, ({ many }) => ({
   scheduleOverrides: many(scheduleOverrides),
   appointments: many(appointments),
