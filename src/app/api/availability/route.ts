@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/drizzle";
 import { appointments, scheduleOverrides, services } from "@/drizzle/schema";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { format, addMinutes, parse } from "date-fns";
 
 // Generate time slots between start and end times

@@ -44,7 +44,6 @@ async function seed() {
     // **3. Seed Working Hours**
     const workingHoursData = insertedBarbers.flatMap((barber) => {
       const isJohn = barber.name === "John Doe";
-      const isJane = barber.name === "Jane Smith";
 
       const defaultHours = isJohn
         ? {
@@ -179,7 +178,7 @@ async function seed() {
       .execute();
 
     // **6. Seed Appointments**
-    const appointmentsData = [
+    const appointmentsData: (typeof appointments.$inferInsert)[] = [
       {
         barberId: insertedBarbers.find((b) => b.name === "John Doe")!.id,
         serviceId: insertedServices.find((s) => s.name === "Classic Haircut")!
@@ -189,7 +188,7 @@ async function seed() {
         customerPhone: "555-9012",
         date: "2023-11-13",
         time: "09:00:00",
-        status: "confirmed",
+        status: "confirmed" as const,
       },
       {
         barberId: insertedBarbers.find((b) => b.name === "John Doe")!.id,
@@ -199,7 +198,7 @@ async function seed() {
         customerPhone: "555-3456",
         date: "2023-11-13",
         time: "10:00:00",
-        status: "pending",
+        status: "pending" as const,
       },
       {
         barberId: insertedBarbers.find((b) => b.name === "Jane Smith")!.id,
@@ -209,7 +208,7 @@ async function seed() {
         customerPhone: "555-7890",
         date: "2023-11-14",
         time: "11:00:00",
-        status: "confirmed",
+        status: "confirmed" as const,
       },
     ];
 

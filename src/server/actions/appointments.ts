@@ -1,7 +1,12 @@
 "use server";
 import { db } from "@/drizzle";
 import { and, eq } from "drizzle-orm";
-import { appointments, barbers, services } from "@/drizzle/schema";
+import {
+  appointments,
+  barbers,
+  services,
+  type Appointment,
+} from "@/drizzle/schema";
 import { z } from "zod";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";

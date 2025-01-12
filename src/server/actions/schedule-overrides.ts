@@ -4,7 +4,6 @@ import { scheduleOverrides } from "@/drizzle/schema";
 
 import { db } from "@/drizzle";
 import { barbers } from "@/drizzle/schema";
-import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 
 export async function saveScheduleOverride(data: {

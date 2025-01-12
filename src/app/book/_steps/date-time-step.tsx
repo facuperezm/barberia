@@ -36,11 +36,7 @@ export function DateTimeStep() {
     return state.date ? format(state.date, "yyyy-MM-dd") : "";
   }, [state.date]);
 
-  const {
-    data: availableSlots = [],
-    isLoading,
-    isError,
-  } = useQuery<TimeSlot[], Error>({
+  const { data: availableSlots = [], isLoading } = useQuery<TimeSlot[], Error>({
     queryKey: ["availability", state.barberId, formattedDate, state.serviceId], // Added serviceId to queryKey
     queryFn: () =>
       fetchAvailableSlots(
