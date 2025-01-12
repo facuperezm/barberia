@@ -2,7 +2,7 @@
 
 import { db } from "@/drizzle";
 import { barbers } from "@/drizzle/schema";
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { type Barber } from "@/lib/types";
@@ -20,6 +20,11 @@ interface ActionResponse {
   barber?: Barber;
   error?: string;
   errors?: Record<string, string[]>;
+}
+
+export interface Employee {
+  id: number;
+  name: string;
 }
 
 export async function deleteBarber(
@@ -102,4 +107,12 @@ export async function getBarbers(): Promise<Barber[]> {
     console.error("Error fetching barbers:", error);
     return [];
   }
+}
+
+export async function getAllEmployees(): Promise<Employee[]> {
+  const result = await db.select().from(barbers).orderBy(asc(barbers.name));
+  return result.map((emp: typeof barbers.$inferSelect) => ({
+    id: emp.id,
+    name: emp.name,
+  }));
 }

@@ -1,8 +1,12 @@
+"use server";
+
+import { between, eq } from "drizzle-orm";
+
+import { and } from "drizzle-orm";
+
 import { db } from "@/drizzle";
 import { appointments } from "@/drizzle/schema";
 import { addDays, startOfWeek } from "date-fns";
-import { and, between } from "drizzle-orm";
-import { eq } from "drizzle-orm";
 
 interface Appointment {
   id: number;
@@ -23,8 +27,12 @@ export async function getWeeklySchedule(
   employeeId: number,
 ): Promise<DaySchedule[]> {
   const today = new Date();
-  const weekStart = startOfWeek(today, { weekStartsOn: 1 }); // Monday
-  const weekEnd = addDays(weekStart, 6); // Sunday
+  // If it's Sunday, we want to start from tomorrow (Monday)
+  const weekStart =
+    today.getDay() === 0
+      ? addDays(today, 1)
+      : startOfWeek(today, { weekStartsOn: 1 });
+  const weekEnd = addDays(weekStart, 6);
 
   // Fetch appointments for the employee within the week
   const fetchedAppointments = await db

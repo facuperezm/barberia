@@ -22,7 +22,7 @@ import { format, startOfWeek, addDays } from "date-fns";
 import { TableSkeleton } from "@/app/(dashboard)/dashboard/_components/skeleton";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import { AppointmentActions } from "../../../book/_components/appointment-actions";
+import { AppointmentActions } from "@/app/book/_components/appointment-actions";
 import { useQuery } from "@tanstack/react-query";
 import { getAppointments } from "@/server/actions/appointments";
 

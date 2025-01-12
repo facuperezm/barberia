@@ -16,6 +16,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { saveScheduleOverride } from "@/server/actions/schedule-overrides";
+import { getBarbers } from "@/server/actions/barbers";
 
 interface TimeSlot {
   start: string;
@@ -51,6 +54,15 @@ export function ScheduleOverrides() {
     );
   };
 
+  const { data: barbers } = useQuery({
+    queryKey: ["barbers"],
+    queryFn: () => getBarbers(),
+  });
+
+  const { mutateAsync: saveOverride } = useMutation({
+    mutationFn: saveScheduleOverride,
+  });
+
   const handleSave = async () => {
     if (!selectedBarber || !selectedDate) {
       toast.error("Please select a barber and date");
@@ -58,19 +70,14 @@ export function ScheduleOverrides() {
     }
 
     try {
-      const response = await fetch("/api/schedule-overrides", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          barberId: selectedBarber,
-          date: format(selectedDate, "yyyy-MM-dd"),
-          isWorkingDay,
-          availableSlots: isWorkingDay ? timeSlots : [],
-          reason,
-        }),
+      await saveOverride({
+        barberId: selectedBarber,
+        date: format(selectedDate, "yyyy-MM-dd"),
+        isWorkingDay,
+        availableSlots: timeSlots.map((slot) => `${slot.start}-${slot.end}`),
+        reason,
       });
 
-      if (!response.ok) throw new Error("Failed to save override");
       toast.success("Schedule override saved successfully");
 
       // Reset form
@@ -92,8 +99,11 @@ export function ScheduleOverrides() {
             <SelectValue placeholder="Choose a barber" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="6">John Doe</SelectItem>
-            <SelectItem value="2">Jane Smith</SelectItem>
+            {barbers?.map((barber) => (
+              <SelectItem key={barber.id} value={barber.id.toString()}>
+                {barber.name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>

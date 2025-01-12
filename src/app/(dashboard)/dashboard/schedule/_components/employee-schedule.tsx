@@ -20,8 +20,8 @@ import { format } from "date-fns";
 import { Calendar, Clock, User } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
-import { type Employee } from "@/server/queries/employees";
-
+import { getAllEmployees } from "@/server/actions/barbers";
+import { getWeeklySchedule } from "@/server/actions/schedule";
 interface Appointment {
   id: number;
   customerName: string;
@@ -44,15 +44,9 @@ export function EmployeeSchedule() {
     data: employees,
     isLoading: isEmployeesLoading,
     error: employeesError,
-  } = useQuery<Employee[]>({
+  } = useQuery({
     queryKey: ["employees"],
-    queryFn: async () => {
-      const res = await fetch("/api/employees");
-      if (!res.ok) {
-        throw new Error("Failed to fetch employees");
-      }
-      return res.json();
-    },
+    queryFn: getAllEmployees,
   });
 
   const {
@@ -61,19 +55,9 @@ export function EmployeeSchedule() {
     error: scheduleError,
   } = useQuery<DaySchedule[]>({
     queryKey: ["weeklySchedule", selectedEmployee],
-    queryFn: () => fetchWeeklySchedule(Number(selectedEmployee)),
+    queryFn: () => getWeeklySchedule(Number(selectedEmployee)),
     enabled: !!selectedEmployee,
   });
-
-  async function fetchWeeklySchedule(
-    employeeId: number,
-  ): Promise<DaySchedule[]> {
-    const res = await fetch(`/api/schedule?employeeId=${employeeId}`);
-    if (!res.ok) {
-      throw new Error("Failed to fetch schedule");
-    }
-    return res.json();
-  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -164,9 +148,7 @@ export function EmployeeSchedule() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-sm text-muted-foreground">
-                              {apt.service}
-                            </span>
+                            <span className="text-sm text-muted-foreground"></span>
                             <Badge variant={getStatusColor(apt.status)}>
                               {apt.status}
                             </Badge>

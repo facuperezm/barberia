@@ -5,7 +5,6 @@ import { appointments, barbers, services } from "@/drizzle/schema";
 import { z } from "zod";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
-import { Appointment } from "@/hooks/use-appointments";
 
 const appointmentSchema = z.object({
   barberId: z.number().int().positive(),
@@ -170,8 +169,6 @@ export async function updateAppointmentStatus(id: number, status: string) {
       .set({ status: status as Appointment["status"] })
       .where(eq(appointments.id, id))
       .returning();
-
-    revalidatePath("/dashboard");
 
     return { success: true, appointment: updated };
   } catch (error) {
