@@ -55,7 +55,6 @@ const services = [
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
-      {/* Hero Section */}
       <header className="relative">
         <div className="absolute inset-0 bg-black/60" />
         <div
@@ -83,7 +82,6 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Features Section */}
       <section className="py-20">
         <div className="container">
           <h2 className="mb-12 text-center text-3xl font-bold">
@@ -111,31 +109,34 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Services Section */}
       <section className="bg-muted/50 py-20">
         <div className="container">
           <h2 className="mb-12 text-center text-3xl font-bold">Our Services</h2>
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-3">
             {services.map((service, index) => (
               <div
                 key={index}
-                className="group relative overflow-hidden rounded-lg bg-background"
+                className="group relative h-64 overflow-hidden rounded-lg bg-background"
               >
-                <div className="aspect-[4/3]">
+                <div className="relative h-full w-full">
                   <Image
                     src={service.image}
                     alt={service.name}
-                    className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
                     fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
                 </div>
-                <div className="p-6">
-                  <h3 className="mb-2 text-xl font-semibold">{service.name}</h3>
+                <div className="absolute inset-0 flex flex-col justify-end p-6">
+                  <h3 className="mb-2 text-xl font-semibold text-white">
+                    {service.name}
+                  </h3>
                   <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold text-primary">
+                    <span className="text-2xl font-bold text-white">
                       {service.price}
                     </span>
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-sm text-gray-200">
                       {service.duration}
                     </span>
                   </div>
@@ -151,7 +152,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Contact Section */}
       <section className="py-20">
         <div className="container">
           <div className="mx-auto max-w-2xl text-center">
@@ -169,7 +169,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="border-t py-8">
         <div className="container text-center text-sm text-muted-foreground">
           © {new Date().getFullYear()} Modern Barbershop. All rights reserved.
