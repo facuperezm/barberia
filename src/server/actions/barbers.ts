@@ -1,12 +1,12 @@
 "use server";
 
 import { db } from "@/drizzle";
-import { barbers, scheduleOverrides, workingHours } from "@/drizzle/schema";
-import { asc, eq, sql } from "drizzle-orm";
+import { barbers, workingHours } from "@/drizzle/schema";
+import { asc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { type Barber } from "@/lib/types";
 import { auth } from "@clerk/nextjs/server";
+import { type Barber } from "@/drizzle/schema";
 
 const barberSchema = z.object({
   name: z.string().min(1, "Name is required."),
@@ -20,11 +20,6 @@ interface ActionResponse {
   barber?: Barber;
   error?: string;
   errors?: Record<string, string[]>;
-}
-
-export interface Employee {
-  id: number;
-  name: string;
 }
 
 export async function deleteBarber(
@@ -109,11 +104,15 @@ export async function getBarbers(): Promise<Barber[]> {
   }
 }
 
-export async function getAllEmployees(): Promise<Employee[]> {
+export async function getAllEmployees(): Promise<Barber[]> {
   const result = await db.select().from(barbers).orderBy(asc(barbers.name));
-  return result.map((emp: typeof barbers.$inferSelect) => ({
+  return result.map((emp) => ({
     id: emp.id,
     name: emp.name,
+    email: emp.email,
+    phone: emp.phone,
+    imageUrl: emp.imageUrl,
+    createdAt: emp.createdAt,
   }));
 }
 
@@ -125,20 +124,6 @@ export async function getBarberSchedule(barberId: number) {
 
   return result;
 }
-
-// export async function getBarberScheduleById(barberId: number) {
-//   const weeklySchedule = await db
-//     .select()
-//     .from(barbers)
-//     .where(eq(barbers.id, Number(barberId)));
-
-//   const exceptions = await db
-//     .select()
-//     .from(scheduleOverrides)
-//     .where(eq(scheduleOverrides.barberId, Number(barberId)));
-
-//   return { weeklySchedule, exceptions };
-// }
 
 export async function updateBarberSchedule(
   barberId: number,

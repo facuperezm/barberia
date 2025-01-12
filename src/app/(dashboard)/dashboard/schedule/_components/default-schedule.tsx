@@ -19,7 +19,6 @@ import {
   getBarberSchedule,
   updateBarberSchedule,
 } from "@/server/actions/barbers";
-import { format, setDay } from "date-fns";
 import { Input } from "@/components/ui/input";
 
 const DAYS = [

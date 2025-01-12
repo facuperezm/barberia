@@ -12,7 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Trash2 } from "lucide-react";
 import { getBarbers } from "@/server/actions/barbers";
 import ClientDialog from "./_components/client-dialog";
-import { type Barber } from "@/lib/types";
+import { type Barber } from "@/drizzle/schema";
 import { deleteBarber } from "@/server/actions/barbers";
 import { EmployeeList } from "./_components/employee-list";
 
@@ -25,7 +25,7 @@ export default async function BarbersPage() {
         <ClientDialog />
       </DashboardHeader>
       <div className="px-6">
-        <EmployeeList />
+        <EmployeeList initialBarbers={barbers} />
       </div>
       <div className="grid gap-4 p-4 md:grid-cols-2 lg:grid-cols-3">
         {barbers?.map((barber: Barber) => (
