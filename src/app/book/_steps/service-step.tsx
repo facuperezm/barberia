@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Scissors } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
-import { type Service } from "@/lib/types";
+import { type Service } from "@/drizzle/schema";
 import { getServices as getServicesServer } from "@/server/queries/services";
 
 async function getServices(): Promise<Service[]> {

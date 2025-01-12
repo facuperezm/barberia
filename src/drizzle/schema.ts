@@ -21,6 +21,8 @@ export const barbers = pgTable("barbers", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export type Barber = typeof barbers.$inferSelect;
+
 export const scheduleOverrides = pgTable("schedule_overrides", {
   id: serial("id").primaryKey(),
   barberId: integer("barber_id")
@@ -34,6 +36,8 @@ export const scheduleOverrides = pgTable("schedule_overrides", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export type ScheduleOverride = typeof scheduleOverrides.$inferSelect;
+
 export const services = pgTable("services", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -42,6 +46,8 @@ export const services = pgTable("services", {
   duration: integer("duration").notNull(), // duration in minutes
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+export type Service = typeof services.$inferSelect;
 
 export const appointmentStatus = pgEnum("appointment_status", [
   "pending",
@@ -67,6 +73,8 @@ export const appointments = pgTable("appointments", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export type Appointment = typeof appointments.$inferSelect;
+
 export const workingHours = pgTable("working_hours", {
   id: serial("id").primaryKey(),
   barberId: integer("barber_id")
@@ -78,6 +86,8 @@ export const workingHours = pgTable("working_hours", {
   isWorking: boolean("is_working").default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+export type WorkingHour = typeof workingHours.$inferSelect;
 
 export const barbersRelations = relations(barbers, ({ many }) => ({
   scheduleOverrides: many(scheduleOverrides),

@@ -2,7 +2,7 @@
 import { db } from "@/drizzle";
 import { eq } from "drizzle-orm";
 import { services } from "@/drizzle/schema";
-import { type Service } from "@/lib/types";
+import { type Service } from "@/drizzle/schema";
 
 export async function getServices(): Promise<Service[]> {
   try {

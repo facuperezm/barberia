@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getBarbers as getBarbersServer } from "@/server/actions/barbers";
-import { type Barber } from "@/lib/types";
+import { type Barber } from "@/drizzle/schema";
 
 async function getBarbers(): Promise<Barber[]> {
   const barbers = await getBarbersServer();
