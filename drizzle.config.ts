@@ -8,9 +8,6 @@ export default defineConfig({
   strict: true,
   verbose: true,
   dbCredentials: {
-    url:
-      env.NEXT_PUBLIC_NODE_ENV === "dev"
-        ? env.DATABASE_URL_DEV
-        : env.DATABASE_URL,
+    url: env.DATABASE_URL,
   },
 }) satisfies Config;
