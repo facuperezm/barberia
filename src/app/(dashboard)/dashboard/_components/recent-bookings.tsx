@@ -20,48 +20,28 @@ import {
 import { useState } from "react";
 import { format, startOfWeek, addDays } from "date-fns";
 import { TableSkeleton } from "@/app/(dashboard)/dashboard/_components/skeleton";
-import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { AppointmentActions } from "../../../book/_components/appointment-actions";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { getAppointments } from "@/server/actions/appointments";
-import { updateAppointmentStatus } from "@/server/actions/appointments";
-import { type Booking } from "@/lib/types";
 
 const statusColors = {
   confirmed: "default",
   pending: "secondary",
   cancelled: "destructive",
-  completed: "default",
+  completed: "completed",
 } as const;
 
 export function RecentBookings() {
   const [selectedDay, setSelectedDay] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const queryClient = useQueryClient();
 
   const { data: bookings, isLoading } = useQuery({
     queryKey: ["bookings"],
     queryFn: () => getAppointments(),
     staleTime: 1000 * 60 * 10, // 10 minutes
   });
-
-  const mutation = useMutation({
-    mutationFn: (params: { id: number; status: string }) =>
-      updateAppointmentStatus(params.id, params.status),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["bookings"] });
-      toast.success("Booking status updated successfully.");
-    },
-    onError: () => {
-      toast.error("Failed to update booking status.");
-    },
-  });
-
-  const handleStatusChange = (id: number, newStatus: string) => {
-    mutation.mutate({ id, status: newStatus as Booking["status"] });
-  };
 
   // Generate week days for the select dropdown
   const today = new Date();
@@ -184,9 +164,6 @@ export function RecentBookings() {
                       <AppointmentActions
                         id={booking.id}
                         status={booking.status || "pending"}
-                        onStatusChange={(newStatus) =>
-                          handleStatusChange(booking.id, newStatus)
-                        }
                       />
                     </TableCell>
                   </TableRow>
