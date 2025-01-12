@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "@/drizzle";
-import { barbers } from "@/drizzle/schema";
-import { asc, eq } from "drizzle-orm";
+import { barbers, scheduleOverrides, workingHours } from "@/drizzle/schema";
+import { asc, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { type Barber } from "@/lib/types";
@@ -115,4 +115,61 @@ export async function getAllEmployees(): Promise<Employee[]> {
     id: emp.id,
     name: emp.name,
   }));
+}
+
+export async function getBarberSchedule(barberId: number) {
+  const result = await db
+    .select()
+    .from(workingHours)
+    .where(eq(workingHours.barberId, barberId));
+
+  return result;
+}
+
+// export async function getBarberScheduleById(barberId: number) {
+//   const weeklySchedule = await db
+//     .select()
+//     .from(barbers)
+//     .where(eq(barbers.id, Number(barberId)));
+
+//   const exceptions = await db
+//     .select()
+//     .from(scheduleOverrides)
+//     .where(eq(scheduleOverrides.barberId, Number(barberId)));
+
+//   return { weeklySchedule, exceptions };
+// }
+
+export async function updateBarberSchedule(
+  barberId: number,
+  schedule: Record<
+    number,
+    { isWorking: boolean; slots: { start: string; end: string }[] }
+  >,
+) {
+  await db.transaction(async (tx) => {
+    const valuesToInsert = Object.entries(schedule).map(
+      ([dayOfWeek, daySchedule]) => ({
+        barberId,
+        dayOfWeek: Number(dayOfWeek),
+        isWorking: daySchedule.isWorking,
+        startTime:
+          daySchedule.isWorking && daySchedule.slots.length > 0
+            ? daySchedule.slots[0].start
+            : "9:00",
+        endTime:
+          daySchedule.isWorking && daySchedule.slots.length > 0
+            ? daySchedule.slots[0].end
+            : "17:00",
+      }),
+    );
+
+    await tx.delete(workingHours).where(eq(workingHours.barberId, barberId));
+    await tx.insert(workingHours).values(valuesToInsert);
+
+    if (valuesToInsert.length === 0) {
+      tx.rollback();
+      return { success: false, error: "No values to insert" };
+    }
+  });
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -11,11 +11,16 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { useQuery } from "@tanstack/react-query";
-import { type Barber } from "@/lib/types";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  getBarbers,
+  getBarberSchedule,
+  updateBarberSchedule,
+} from "@/server/actions/barbers";
+import { format, setDay } from "date-fns";
+import { Input } from "@/components/ui/input";
 
 const DAYS = [
   { value: "0", label: "Sunday" },
@@ -38,120 +43,123 @@ interface DaySchedule {
 }
 
 export function DefaultSchedule() {
+  const queryClient = useQueryClient();
   const [selectedBarber, setSelectedBarber] = useState("");
-  const [schedule, setSchedule] = useState<Record<string, DaySchedule>>({});
-  const [isLoading, setIsLoading] = useState(false);
+  const [schedule, setSchedule] = useState<Record<number, DaySchedule>>({});
 
   const {
     data: barbers,
     isLoading: isBarbersLoading,
     error: barbersError,
-  } = useQuery<Barber[]>({
+  } = useQuery({
     queryKey: ["barbers"],
-    queryFn: async () => {
-      const response = await fetch("/api/barber");
-      if (!response.ok) throw new Error("Failed to fetch barbers");
-      return response.json();
+    queryFn: getBarbers,
+  });
+
+  const { data: barberSchedule } = useQuery({
+    queryKey: ["barberSchedule", selectedBarber],
+    queryFn: () => getBarberSchedule(parseInt(selectedBarber)),
+    enabled: !!selectedBarber,
+  });
+
+  useEffect(() => {
+    if (barberSchedule) {
+      const normalizedSchedule: Record<number, DaySchedule> = {};
+      DAYS.forEach((day) => {
+        const daySchedule = barberSchedule.find(
+          (d) => d.dayOfWeek === Number(day.value),
+        );
+        normalizedSchedule[Number(day.value)] = {
+          isWorking: daySchedule?.isWorking ?? false,
+          slots:
+            daySchedule?.isWorking &&
+            daySchedule.startTime &&
+            daySchedule.endTime
+              ? [{ start: daySchedule.startTime, end: daySchedule.endTime }]
+              : [],
+        };
+      });
+      setSchedule(normalizedSchedule);
+    }
+  }, [barberSchedule]);
+
+  const { mutate: saveSchedule } = useMutation({
+    mutationFn: () => updateBarberSchedule(parseInt(selectedBarber), schedule),
+    onSuccess: () => {
+      toast.success("Schedule saved successfully");
+    },
+    onError: (error) => {
+      toast.error(`Error saving schedule: ${error.message}`);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["barberSchedule", selectedBarber],
+      });
     },
   });
-  // Fetch barbers and their default schedules
-  useEffect(() => {
-    if (selectedBarber) {
-      fetchBarberSchedule();
-    }
-  }, [selectedBarber]);
 
-  const fetchBarberSchedule = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(`/api/barber/${selectedBarber}/schedule`);
-      if (!response.ok) throw new Error("Failed to fetch schedule");
-      const data = await response.json();
-      setSchedule(data.defaultWorkingHours || {});
-    } catch (error) {
-      toast.error("Failed to load schedule");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleDayToggle = (day: string, isWorking: boolean) => {
+  const handleDayToggle = (dayOfWeek: number, isWorking: boolean) => {
     setSchedule((prev) => ({
       ...prev,
-      [day]: {
+      [dayOfWeek]: {
+        ...prev[dayOfWeek],
         isWorking,
-        slots: prev[day]?.slots || [{ start: "09:00", end: "17:00" }],
+        slots: isWorking ? prev[dayOfWeek]?.slots || [] : [],
       },
     }));
   };
 
-  const handleAddTimeSlot = (day: string) => {
+  const handleAddTimeSlot = (dayOfWeek: number) => {
     setSchedule((prev) => ({
       ...prev,
-      [day]: {
-        ...prev[day],
-        slots: [...(prev[day]?.slots || []), { start: "09:00", end: "17:00" }],
+      [dayOfWeek]: {
+        ...prev[dayOfWeek],
+        slots: [
+          ...(prev[dayOfWeek]?.slots || []),
+          { start: "09:00", end: "17:00" },
+        ],
       },
     }));
   };
 
-  const handleRemoveTimeSlot = (day: string, index: number) => {
+  const handleRemoveTimeSlot = (dayOfWeek: number, index: number) => {
     setSchedule((prev) => ({
       ...prev,
-      [day]: {
-        ...prev[day],
-        slots: prev[day].slots.filter((_, i) => i !== index),
+      [dayOfWeek]: {
+        ...prev[dayOfWeek],
+        slots: prev[dayOfWeek].slots.filter((_, i) => i !== index),
       },
     }));
   };
 
   const handleTimeChange = (
-    day: string,
+    dayOfWeek: number,
     index: number,
     field: "start" | "end",
     value: string,
   ) => {
     setSchedule((prev) => ({
       ...prev,
-      [day]: {
-        ...prev[day],
-        slots: prev[day].slots.map((slot, i) =>
+      [dayOfWeek]: {
+        ...prev[dayOfWeek],
+        slots: prev[dayOfWeek].slots.map((slot, i) =>
           i === index ? { ...slot, [field]: value } : slot,
         ),
       },
     }));
   };
 
-  const handleSave = async () => {
-    try {
-      const normalizedSchedule = Object.entries(schedule).reduce(
-        (acc, [day, daySchedule]) => ({
-          ...acc,
-          [day]: {
-            isWorking: daySchedule.isWorking,
-            slots: daySchedule.isWorking
-              ? daySchedule.slots.map((slot) => ({
-                  start: slot.start.substring(0, 5),
-                  end: slot.end.substring(0, 5),
-                }))
-              : [],
-          },
-        }),
-        {},
-      );
-
-      const response = await fetch(`/api/barber/${selectedBarber}/schedule`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ defaultWorkingHours: normalizedSchedule }),
-      });
-
-      if (!response.ok) throw new Error("Failed to save schedule");
-      toast.success("Schedule saved successfully");
-    } catch (error) {
-      toast.error("Failed to save schedule");
-    }
+  const handleSave = () => {
+    saveSchedule(schedule);
   };
+
+  if (isBarbersLoading) {
+    return <div>Loading barbers...</div>;
+  }
+
+  if (barbersError) {
+    return <div>Error loading barbers</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -182,25 +190,25 @@ export function DefaultSchedule() {
         </Select>
       </div>
 
-      {selectedBarber && !isLoading && (
+      {selectedBarber && !isBarbersLoading && (
         <div className="space-y-6">
           {DAYS.map((day) => (
             <div key={day.value} className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Switch
-                    checked={schedule[day.value]?.isWorking}
+                    checked={schedule[Number(day.value)]?.isWorking}
                     onCheckedChange={(checked) =>
-                      handleDayToggle(day.value, checked)
+                      handleDayToggle(Number(day.value), checked)
                     }
                   />
                   <Label>{day.label}</Label>
                 </div>
-                {schedule[day.value]?.isWorking && (
+                {schedule[Number(day.value)]?.isWorking && (
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleAddTimeSlot(day.value)}
+                    onClick={() => handleAddTimeSlot(Number(day.value))}
                   >
                     <Plus className="mr-1 h-4 w-4" />
                     Add Time Slot
@@ -208,16 +216,16 @@ export function DefaultSchedule() {
                 )}
               </div>
 
-              {schedule[day.value]?.isWorking && (
+              {schedule[Number(day.value)]?.isWorking && (
                 <div className="space-y-2">
-                  {schedule[day.value].slots.map((slot, index) => (
+                  {schedule[Number(day.value)].slots.map((slot, index) => (
                     <div key={index} className="flex items-center space-x-2">
                       <Input
                         type="time"
                         value={slot.start}
                         onChange={(e) =>
                           handleTimeChange(
-                            day.value,
+                            Number(day.value),
                             index,
                             "start",
                             e.target.value,
@@ -230,20 +238,24 @@ export function DefaultSchedule() {
                         value={slot.end}
                         onChange={(e) =>
                           handleTimeChange(
-                            day.value,
+                            Number(day.value),
                             index,
                             "end",
                             e.target.value,
                           )
                         }
                       />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleRemoveTimeSlot(day.value, index)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      {index > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() =>
+                            handleRemoveTimeSlot(Number(day.value), index)
+                          }
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      )}
                     </div>
                   ))}
                 </div>
