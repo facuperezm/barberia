@@ -1,0 +1,2 @@
+ALTER TABLE "working_hours" DROP CONSTRAINT "working_hours_time_valid";--> statement-breakpoint
+ALTER TABLE "working_hours" ADD CONSTRAINT "working_hours_time_valid" CHECK ("working_hours"."is_working" = false OR "working_hours"."start_time" < "working_hours"."end_time");

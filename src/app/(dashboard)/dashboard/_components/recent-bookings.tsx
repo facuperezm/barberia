@@ -40,8 +40,9 @@ export function RecentBookings() {
   const { data: bookings, isLoading } = useQuery({
     queryKey: ["bookings"],
     queryFn: () => getAppointments(),
-    staleTime: 1000 * 60 * 10, // 10 minutes
+    // staleTime: 1000 * 60 * 10, // 10 minutes
   });
+  console.log(bookings);
 
   // Generate week days for the select dropdown
   const today = new Date();
@@ -57,15 +58,17 @@ export function RecentBookings() {
   const filteredBookings =
     bookings?.appointments
       ?.filter(
-        (booking) => selectedDay === "all" || booking.date === selectedDay,
+        (booking) =>
+          selectedDay === "all" ||
+          booking.appointmentAt.toISOString().split("T")[0] === selectedDay,
       )
       .filter((booking) => {
         const term = searchTerm.toLowerCase();
         return (
           searchTerm === "" ||
-          booking.customerName.toLowerCase().includes(term) ||
-          booking.customerEmail.toLowerCase().includes(term) ||
-          booking.customerPhone.includes(searchTerm)
+          booking.customerName?.toLowerCase().includes(term) ||
+          booking.customerEmail?.toLowerCase().includes(term) ||
+          booking.customerPhone?.includes(searchTerm)
         );
       }) || [];
 
@@ -140,9 +143,11 @@ export function RecentBookings() {
                     <TableCell>{booking.service}</TableCell>
                     <TableCell>{booking.barber}</TableCell>
                     <TableCell>
-                      {format(new Date(booking.date), "MMM d, yyyy")}
+                      {format(new Date(booking.appointmentAt), "MMM d, yyyy")}
                     </TableCell>
-                    <TableCell>{booking.time}</TableCell>
+                    <TableCell>
+                      {format(new Date(booking.appointmentAt), "h:mm a")}
+                    </TableCell>
                     <TableCell className="text-sm">
                       <div>{booking.customerEmail}</div>
                       <div className="text-muted-foreground">

@@ -17,6 +17,6 @@ export async function getServices(): Promise<Service[]> {
 export async function updateServicePrice(formData: FormData) {
   return db
     .update(services)
-    .set({ price: Number(formData.get("price")) })
+    .set({ priceCents: Number(formData.get("price")) })
     .where(eq(services.id, Number(formData.get("serviceId"))));
 }

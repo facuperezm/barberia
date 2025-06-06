@@ -4,6 +4,7 @@ import { and, eq } from "drizzle-orm";
 import {
   appointments,
   barbers,
+  customers,
   services,
   type Appointment,
 } from "@/drizzle/schema";
@@ -142,18 +143,18 @@ export async function getAppointments() {
     const allAppointments = await db
       .select({
         id: appointments.id,
-        customerName: appointments.customerName,
-        customerEmail: appointments.customerEmail,
-        customerPhone: appointments.customerPhone,
-        date: appointments.date,
-        time: appointments.time,
+        customerName: customers.name,
+        customerEmail: customers.email,
+        customerPhone: customers.phone,
+        appointmentAt: appointments.appointmentAt,
         status: appointments.status,
         barber: barbers.name,
         service: services.name,
       })
       .from(appointments)
       .leftJoin(barbers, eq(appointments.barberId, barbers.id))
-      .leftJoin(services, eq(appointments.serviceId, services.id));
+      .leftJoin(services, eq(appointments.serviceId, services.id))
+      .leftJoin(customers, eq(appointments.customerId, customers.id));
 
     return { success: true, appointments: allAppointments };
   } catch (error) {
