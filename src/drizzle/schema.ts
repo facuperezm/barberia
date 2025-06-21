@@ -34,6 +34,7 @@ export const paymentMethodEnum = pgEnum("payment_method", [
   "stripe",
   "paypal",
   "bank_transfer",
+  "mercadopago",
 ]);
 
 export const paymentStatusEnum = pgEnum("payment_status", [
@@ -377,6 +378,20 @@ export const payments = pgTable(
     method: paymentMethodEnum("method").notNull(),
     status: paymentStatusEnum("status").notNull().default("pending"),
     stripePaymentIntentId: text("stripe_payment_intent_id"),
+    // MercadoPago specific fields
+    mercadopagoPaymentId: text("mercadopago_payment_id"),
+    mercadopagoPreferenceId: text("mercadopago_preference_id"),
+    mercadopagoPaymentMethodId: text("mercadopago_payment_method_id"),
+    mercadopagoPaymentType: text("mercadopago_payment_type"),
+    mercadopagoInstallments: integer("mercadopago_installments"),
+    mercadopagoCardLastFourDigits: text("mercadopago_card_last_four_digits"),
+    mercadopagoPayerEmail: text("mercadopago_payer_email"),
+    mercadopagoProcessingMode: text("mercadopago_processing_mode"), // gateway or aggregator
+    mercadopagoOperationType: text("mercadopago_operation_type"), // regular_payment, subscription_payment, etc.
+    mercadopagoExternalReference: text("mercadopago_external_reference"),
+    mercadopagoTransactionDetails: jsonb("mercadopago_transaction_details"),
+    mercadopagoStatusDetail: text("mercadopago_status_detail"),
+    mercadopagoFailureReason: text("mercadopago_failure_reason"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -392,6 +407,16 @@ export const payments = pgTable(
     methodIdx: index("payments_method_idx").on(table.method),
     stripeIdIdx: index("payments_stripe_id_idx").on(
       table.stripePaymentIntentId,
+    ),
+    // MercadoPago indexes
+    mercadopagoPaymentIdIdx: index("payments_mercadopago_payment_id_idx").on(
+      table.mercadopagoPaymentId,
+    ),
+    mercadopagoPreferenceIdIdx: index("payments_mercadopago_preference_id_idx").on(
+      table.mercadopagoPreferenceId,
+    ),
+    mercadopagoExternalRefIdx: index("payments_mercadopago_external_ref_idx").on(
+      table.mercadopagoExternalReference,
     ),
     amountCheck: check(
       "payments_amount_positive",

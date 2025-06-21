@@ -68,6 +68,7 @@ export function BookingForm() {
         return;
       }
 
+      // Create the appointment first
       const response = await fetch("/api/appointments", {
         method: "POST",
         headers: {
@@ -88,26 +89,37 @@ export function BookingForm() {
         throw new Error("Failed to create appointment");
       }
 
-      // Get barber and service names from your data
-      const barberName = state.barberId === "1" ? "John Doe" : "Jane Smith";
-      const serviceName =
-        state.serviceId === "1"
-          ? "Classic Haircut"
-          : state.serviceId === "2"
-            ? "Beard Trim"
-            : "Full Service";
+      const appointmentData = await response.json();
+      const appointmentId = appointmentData.id;
 
-      // Redirect to success page with booking details
-      router.push(
-        `/book/success?` +
-          `date=${state.date?.toISOString()}` +
-          `&time=${state.time}` +
-          `&barber=${encodeURIComponent(barberName)}` +
-          `&service=${encodeURIComponent(serviceName)}`,
-      );
+      // Create MercadoPago payment preference
+      const paymentResponse = await fetch("/api/mercadopago/preferences", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ appointmentId }),
+      });
 
-      resetBooking();
+      if (!paymentResponse.ok) {
+        throw new Error("Failed to create payment preference");
+      }
+
+      const paymentData = await paymentResponse.json();
+
+      // Redirect to MercadoPago checkout
+      const checkoutUrl = process.env.NODE_ENV === 'production' 
+        ? paymentData.init_point 
+        : paymentData.sandbox_init_point;
+
+      if (checkoutUrl) {
+        window.location.href = checkoutUrl;
+      } else {
+        throw new Error("No checkout URL received");
+      }
+
     } catch (error) {
+      console.error("Booking error:", error);
       toast.error("Failed to book appointment. Please try again.");
     } finally {
       setIsSubmitting(false);
