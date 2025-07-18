@@ -2,11 +2,12 @@
 
 import { db } from "@/drizzle";
 import { barbers, workingHours } from "@/drizzle/schema";
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { auth } from "@clerk/nextjs/server";
 import { type Barber } from "@/drizzle/schema";
+import { getCurrentSalonId } from "@/lib/salon-context";
 
 const barberSchema = z.object({
   name: z.string().min(1, "Name is required."),
@@ -38,12 +39,18 @@ export async function deleteBarber(
   }
 
   try {
+    const salonId = await getCurrentSalonId();
     const deleteResult = await db
       .delete(barbers)
-      .where(eq(barbers.id, parseInt(id)));
+      .where(
+        and(
+          eq(barbers.id, parseInt(id)),
+          eq(barbers.salonId, salonId),
+        ),
+      );
 
     if (deleteResult.count === 0) {
-      return { success: false, error: "Barber not found." };
+      return { success: false, error: "Barber not found or access denied." };
     }
 
     revalidatePath("/dashboard/barbers");
@@ -77,9 +84,13 @@ export async function addBarber(state: unknown, formData: FormData) {
   const { name, email, phone, imageUrl } = inputValidation.data;
 
   try {
+    // Get current salon context
+    const salonId = await getCurrentSalonId();
+
     const newBarber = await db
       .insert(barbers)
       .values({
+        salonId, // Add salon scoping
         name: name as string,
         email: email as string,
         phone: phone as string,
@@ -96,7 +107,11 @@ export async function addBarber(state: unknown, formData: FormData) {
 
 export async function getBarbers(): Promise<Barber[]> {
   try {
-    const allBarbers = await db.select().from(barbers);
+    const salonId = await getCurrentSalonId();
+    const allBarbers = await db
+      .select()
+      .from(barbers)
+      .where(eq(barbers.salonId, salonId));
     return allBarbers as Barber[];
   } catch (error) {
     console.error("Error fetching barbers:", error);
@@ -105,15 +120,18 @@ export async function getBarbers(): Promise<Barber[]> {
 }
 
 export async function getAllEmployees(): Promise<Barber[]> {
-  const result = await db.select().from(barbers).orderBy(asc(barbers.name));
-  return result.map((emp) => ({
-    id: emp.id,
-    name: emp.name,
-    email: emp.email,
-    phone: emp.phone,
-    imageUrl: emp.imageUrl,
-    createdAt: emp.createdAt,
-  }));
+  try {
+    const salonId = await getCurrentSalonId();
+    const result = await db
+      .select()
+      .from(barbers)
+      .where(eq(barbers.salonId, salonId))
+      .orderBy(asc(barbers.name));
+    return result;
+  } catch (error) {
+    console.error("Error fetching employees:", error);
+    return [];
+  }
 }
 
 export async function getBarberSchedule(barberId: number) {

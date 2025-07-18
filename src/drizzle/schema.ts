@@ -296,10 +296,18 @@ export const appointments = pgTable(
     }),
     appointmentAt: timestamp("appointment_at", {
       withTimezone: true,
-    }).notNull(),
-    endTime: timestamp("end_time", { withTimezone: true }).notNull(), // Computed from appointmentAt + service duration
+    }),
+    endTime: timestamp("end_time", { withTimezone: true }), // Computed from appointmentAt + service duration
     status: appointmentStatusEnum("status").notNull().default("pending"),
     notes: text("notes"), // Special requests or notes
+    
+    // Current fields (will be migrated to proper schema later)
+    date: date("date"), // Currently used - will migrate to appointmentAt
+    time: time("time"), // Currently used - will migrate to appointmentAt
+    customerName: text("customer_name"), // Currently used - will migrate to customerId relation
+    customerEmail: text("customer_email"), // Currently used - will migrate to customerId relation
+    customerPhone: text("customer_phone"), // Currently used - will migrate to customerId relation
+    
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -318,6 +326,12 @@ export const appointments = pgTable(
     barberDateIdx: index("appointments_barber_date_idx").on(
       table.barberId,
       table.appointmentAt,
+    ),
+    // Legacy indexes for backward compatibility
+    dateIdx: index("appointments_date_idx").on(table.date),
+    barberDateLegacyIdx: index("appointments_barber_date_legacy_idx").on(
+      table.barberId,
+      table.date,
     ),
     // Prevent overlapping appointments for the same barber
     noOverlapCheck: check(
@@ -448,6 +462,13 @@ export const barbersRelations = relations(barbers, ({ many, one }) => ({
   scheduleOverrides: many(scheduleOverrides),
   appointments: many(appointments),
 }));
+
+// Helper function to get current salon ID from context
+export const getCurrentSalonId = (): number => {
+  // This will be implemented based on your authentication system
+  // For now, return a default salon ID (you'll need to implement this)
+  return 1; // TODO: Get from auth context
+};
 
 export const servicesRelations = relations(services, ({ many, one }) => ({
   salon: one(salons, {

@@ -31,11 +31,11 @@ interface ActionResponse {
 
 interface AppointmentResponse {
   id: number;
-  customerName: string;
-  customerEmail: string;
-  customerPhone: string;
-  date: string;
-  time: string;
+  customerName: string | null;
+  customerEmail: string | null;
+  customerPhone: string | null;
+  date: string | null;
+  time: string | null;
   status: string | null;
 }
 
@@ -105,17 +105,25 @@ export async function createAppointment(
         throw new Error("The selected time slot is already booked.");
       }
 
+      // Create proper timestamp from date and time
+      const appointmentDateTime = new Date(`${formattedDate}T${formattedTime}`);
+      const endDateTime = new Date(appointmentDateTime.getTime() + service[0].durationMinutes * 60000);
+
       const appointment = await tx
         .insert(appointments)
         .values({
+          salonId: barber[0].salonId, // Add salon ID for proper scoping
           barberId,
           serviceId,
+          appointmentAt: appointmentDateTime,
+          endTime: endDateTime,
+          status: "pending",
+          // Legacy fields for backward compatibility
+          date: formattedDate,
+          time: formattedTime,
           customerName,
           customerEmail,
           customerPhone,
-          date: formattedDate,
-          time: formattedTime,
-          status: "pending",
         })
         .returning();
 

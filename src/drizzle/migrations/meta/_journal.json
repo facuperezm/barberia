@@ -22,6 +22,13 @@
       "when": 1748903728115,
       "tag": "0002_damp_the_phantom",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1752792345039,
+      "tag": "0003_furry_winter_soldier",
+      "breakpoints": true
     }
   ]
 }

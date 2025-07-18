@@ -135,9 +135,17 @@ export async function GET(request: Request) {
     );
 
     // Get existing appointments with their service durations
-    const existingAppointments = await db.query.appointments.findMany({
-      where: eq(appointments.date, dateStr.toString()),
-    });
+    const existingAppointments = await db
+      .select({
+        id: appointments.id,
+        appointmentAt: appointments.appointmentAt,
+        endTime: appointments.endTime,
+        date: appointments.date,
+        time: appointments.time,
+        barberId: appointments.barberId,
+      })
+      .from(appointments)
+      .where(eq(appointments.date, formattedDate));
 
     // Log existing appointments for debugging
     console.log("Existing Appointments:", existingAppointments);
@@ -145,8 +153,17 @@ export async function GET(request: Request) {
     // Map slots to include availability
     const slotsWithAvailability = timeSlots.map((time) => {
       const isBlocked = existingAppointments.some((apt) => {
-        // Strip seconds from appointment time
-        const appointmentTime = apt.time.slice(0, 5); // 'HH:mm'
+        // Only check appointments for the same barber
+        if (apt.barberId !== parseInt(barberId)) {
+          return false;
+        }
+
+        // Strip seconds from appointment time if it exists
+        const appointmentTime = apt.time ? apt.time.slice(0, 5) : null; // 'HH:mm'
+
+        if (!appointmentTime) {
+          return false;
+        }
 
         return isSlotBlockedByAppointment(
           time,

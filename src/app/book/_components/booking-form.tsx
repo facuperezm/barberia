@@ -7,23 +7,47 @@ import { DateTimeStep } from "@/app/book/_steps/date-time-step";
 import { CustomerStep } from "@/app/book/_steps/customer-step";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useMemo, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { createBookingAction } from "@/server/actions/bookings";
+import { cn } from "@/lib/utils";
+import { CheckCircle, Clock, User, Scissors } from "lucide-react";
 
 const steps = [
-  { title: "Choose Barber", component: BarberStep },
-  { title: "Select Service", component: ServiceStep },
-  { title: "Pick Date & Time", component: DateTimeStep },
-  { title: "Your Details", component: CustomerStep },
+  { 
+    title: "Choose Barber", 
+    component: BarberStep,
+    icon: User,
+    description: "Select your preferred barber"
+  },
+  { 
+    title: "Select Service", 
+    component: ServiceStep,
+    icon: Scissors,
+    description: "Choose the service you need"
+  },
+  { 
+    title: "Pick Date & Time", 
+    component: DateTimeStep,
+    icon: Clock,
+    description: "Find an available time slot"
+  },
+  { 
+    title: "Your Details", 
+    component: CustomerStep,
+    icon: CheckCircle,
+    description: "Complete your booking information"
+  },
 ];
 
 export function BookingForm() {
   const { step, setStep, state, resetBooking } = useBooking();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
-  const canGoNext = () => {
+  const canGoNext = useMemo(() => {
     switch (step) {
       case 0:
         return !!state.barberId;
@@ -33,137 +57,176 @@ export function BookingForm() {
         return !!state.date && !!state.time;
       case 3:
         return (
-          !!state.customerName && !!state.customerEmail && !!state.customerPhone
+          !!state.customerName && 
+          !!state.customerEmail && 
+          !!state.customerPhone &&
+          // Basic email validation
+          /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.customerEmail) &&
+          // Basic phone validation
+          state.customerPhone.length >= 10
         );
       default:
         return false;
     }
-  };
+  }, [step, state]);
 
-  const handleSubmit = async () => {
-    try {
-      setIsSubmitting(true);
+  const handleSubmit = () => {
+    startTransition(async () => {
+      try {
+        if (!state.date) {
+          throw new Error("Please select a date");
+        }
 
-      // verify the slot is still available
-      const formattedDate = state.date?.toISOString().split("T")[0];
-      const availabilityResponse = await fetch(
-        `/api/availability?date=${formattedDate}&barberId=${state.barberId}&serviceId=${state.serviceId}`,
-      );
-
-      if (!availabilityResponse.ok) {
-        throw new Error("Failed to verify availability");
-      }
-
-      const slots = await availabilityResponse.json();
-      const isSlotAvailable = slots.find(
-        (slot: { time: string; available: boolean }) =>
-          slot.time === state.time && slot.available,
-      );
-
-      if (!isSlotAvailable) {
-        toast.error(
-          "This time slot is no longer available. Please select another time.",
-        );
-        setStep(2); // Go back to date/time selection
-        return;
-      }
-
-      // Create the appointment first
-      const response = await fetch("/api/appointments", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+        const result = await createBookingAction({
           barberId: parseInt(state.barberId),
           serviceId: parseInt(state.serviceId),
           customerName: state.customerName,
           customerEmail: state.customerEmail,
           customerPhone: state.customerPhone,
-          date: state.date,
+          date: state.date.toISOString().split("T")[0],
           time: state.time,
-        }),
-      });
+        });
 
-      if (!response.ok) {
-        throw new Error("Failed to create appointment");
+        if (!result.success) {
+          if (result.errors) {
+            // Show validation errors
+            const firstError = Object.values(result.errors)[0]?.[0];
+            toast.error(firstError || "Please check your information");
+          } else {
+            toast.error(result.error || "Failed to book appointment");
+          }
+          return;
+        }
+
+        if (result.redirectUrl) {
+          // Redirect to payment
+          window.location.href = result.redirectUrl;
+        } else {
+          // No payment required, redirect to success
+          toast.success("Appointment booked successfully!");
+          router.push(`/book/success?appointment=${result.appointmentId}`);
+        }
+      } catch (error) {
+        console.error("Booking error:", error);
+        toast.error("An unexpected error occurred. Please try again.");
       }
-
-      const appointmentData = await response.json();
-      const appointmentId = appointmentData.id;
-
-      // Create MercadoPago payment preference
-      const paymentResponse = await fetch("/api/mercadopago/preferences", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ appointmentId }),
-      });
-
-      if (!paymentResponse.ok) {
-        throw new Error("Failed to create payment preference");
-      }
-
-      const paymentData = await paymentResponse.json();
-
-      // Redirect to MercadoPago checkout
-      const checkoutUrl = process.env.NODE_ENV === 'production' 
-        ? paymentData.init_point 
-        : paymentData.sandbox_init_point;
-
-      if (checkoutUrl) {
-        window.location.href = checkoutUrl;
-      } else {
-        throw new Error("No checkout URL received");
-      }
-
-    } catch (error) {
-      console.error("Booking error:", error);
-      toast.error("Failed to book appointment. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
+    });
   };
 
   const CurrentStep = steps[step].component;
+  const currentStepInfo = steps[step];
 
   return (
-    <div className="rounded-lg border bg-card p-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold">Book Your Appointment</h1>
-        <p className="text-muted-foreground">
-          Step {step + 1} of {steps.length}: {steps[step].title}
-        </p>
-        <Progress value={((step + 1) / steps.length) * 100} className="mt-4" />
-      </div>
+    <div className="mx-auto max-w-4xl space-y-6">
+      {/* Progress Header */}
+      <Card className="p-6">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold">Book Your Appointment</h1>
+              <p className="text-muted-foreground">
+                {currentStepInfo.description}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">{step + 1}</span>
+              <span>/</span>
+              <span>{steps.length}</span>
+            </div>
+          </div>
+          
+          {/* Step indicators */}
+          <div className="flex items-center gap-2">
+            {steps.map((s, index) => {
+              const Icon = s.icon;
+              const isActive = index === step;
+              const isCompleted = index < step;
+              
+              return (
+                <div
+                  key={index}
+                  className={cn(
+                    "flex flex-1 items-center gap-2",
+                    index < steps.length - 1 && "relative"
+                  )}
+                >
+                  <button
+                    onClick={() => index < step && setStep(index)}
+                    disabled={index > step}
+                    className={cn(
+                      "relative z-10 flex size-10 items-center justify-center rounded-full border-2 transition-colors",
+                      isActive && "border-primary bg-primary text-primary-foreground",
+                      isCompleted && "border-primary bg-primary/10 text-primary",
+                      !isActive && !isCompleted && "border-muted-foreground/30 text-muted-foreground"
+                    )}
+                  >
+                    <Icon className="size-5" />
+                  </button>
+                  
+                  {index < steps.length - 1 && (
+                    <div className="absolute left-10 right-0 top-5 h-0.5 -z-10">
+                      <div 
+                        className={cn(
+                          "h-full transition-all",
+                          isCompleted ? "bg-primary" : "bg-muted-foreground/30"
+                        )}
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          
+          <Progress value={((step + 1) / steps.length) * 100} className="h-2" />
+        </div>
+      </Card>
 
-      <CurrentStep />
+      {/* Step Content */}
+      <Card className="p-6">
+        <CurrentStep />
+      </Card>
 
-      <div className="mt-8 flex justify-between">
+      {/* Navigation */}
+      <div className="flex justify-between gap-4">
         <Button
           variant="outline"
           onClick={() => setStep(step - 1)}
-          disabled={step === 0}
+          disabled={step === 0 || isPending}
+          className="min-w-[100px]"
         >
           Previous
         </Button>
-        <Button
-          onClick={() => {
-            if (step === steps.length - 1) {
-              handleSubmit();
-            } else {
-              setStep(step + 1);
-            }
-          }}
-          disabled={!canGoNext() || isSubmitting}
-        >
-          {step === steps.length - 1
-            ? isSubmitting
-              ? "Booking..."
-              : "Confirm Booking"
-            : "Next"}
-        </Button>
+        
+        <div className="flex gap-2">
+          {step === steps.length - 1 && (
+            <Button
+              variant="outline"
+              onClick={resetBooking}
+              disabled={isPending}
+            >
+              Start Over
+            </Button>
+          )}
+          
+          <Button
+            onClick={() => {
+              if (step === steps.length - 1) {
+                handleSubmit();
+              } else {
+                setStep(step + 1);
+              }
+            }}
+            disabled={!canGoNext || isPending}
+            className="min-w-[120px]"
+          >
+            {step === steps.length - 1
+              ? isPending
+                ? "Processing..."
+                : "Complete Booking"
+              : "Continue"}
+          </Button>
+        </div>
       </div>
     </div>
   );
