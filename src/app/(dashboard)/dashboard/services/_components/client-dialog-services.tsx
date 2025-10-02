@@ -44,7 +44,8 @@ export default function ClientDialogServices({
                 id="price"
                 name="price"
                 type="number"
-                defaultValue={service.price}
+                defaultValue={service.priceCents / 100}
+                step="0.01"
               />
               <input type="hidden" name="serviceId" value={service.id} />
             </div>

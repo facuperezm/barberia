@@ -29,10 +29,10 @@ export default async function ServicesPage() {
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Clock className="size-4" />
-                  {service.duration} minutes
+                  {service.durationMinutes} minutes
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-lg font-bold">${service.price}</span>
+                  <span className="text-lg font-bold">${(service.priceCents / 100).toFixed(2)}</span>
                   <ClientDialogServices service={service} />
                 </div>
                 <p className="text-sm text-muted-foreground">

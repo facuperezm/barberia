@@ -1,7 +1,25 @@
 import { NextResponse } from "next/server";
 import { createAppointment } from "@/server/actions/appointments";
+import { rateLimit, getClientIdentifier } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
+  // Apply rate limiting: 20 requests per minute
+  const identifier = getClientIdentifier(request);
+  const rateLimitResult = rateLimit(identifier, { maxRequests: 20, windowSeconds: 60 });
+
+  if (!rateLimitResult.success) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { 
+        status: 429,
+        headers: {
+          "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
+          "X-RateLimit-Reset": new Date(rateLimitResult.resetTime).toISOString(),
+        }
+      }
+    );
+  }
+
   try {
     const data = await request.json();
     

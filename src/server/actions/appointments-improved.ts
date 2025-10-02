@@ -104,7 +104,7 @@ export async function createAppointmentImproved(
       }
 
       // Find or create customer
-      let customer = await tx
+      const customer = await tx
         .select()
         .from(customers)
         .where(
@@ -173,7 +173,6 @@ export async function createAppointmentImproved(
       appointment: insertedAppointment,
     };
   } catch (error) {
-    console.error("Error creating appointment:", error);
     return {
       success: false,
       error:
@@ -217,7 +216,6 @@ export async function getAppointmentsImproved() {
 
     return { success: true, appointments: allAppointments };
   } catch (error) {
-    console.error("Error fetching appointments:", error);
     return { success: false, error: "Failed to fetch appointments" };
   }
 }
@@ -256,7 +254,6 @@ export async function updateAppointmentStatusImproved(
     revalidatePath("/dashboard/appointments");
     return { success: true, appointment: updated };
   } catch (error) {
-    console.error("Error updating appointment:", error);
     return { success: false, error: "Failed to update appointment" };
   }
 }

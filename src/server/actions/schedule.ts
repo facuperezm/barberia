@@ -53,15 +53,17 @@ export async function getWeeklySchedule(
   const scheduleMap: Record<string, Appointment[]> = {};
 
   fetchedAppointments.forEach((apt) => {
+    if (!apt.date) return; // Skip appointments without dates
+    
     const dateKey = apt.date.toString().split("T")[0]; // YYYY-MM-DD
     if (!scheduleMap[dateKey]) {
       scheduleMap[dateKey] = [];
     }
     scheduleMap[dateKey].push({
       id: apt.id,
-      customerName: apt.customerName,
+      customerName: apt.customerName || "N/A",
       service: apt.serviceId.toString(),
-      time: apt.time,
+      time: apt.time || "00:00",
       status: apt.status as "pending" | "confirmed" | "cancelled" | "completed",
     });
   });

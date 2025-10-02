@@ -191,7 +191,7 @@ async function seed() {
       salonId: mainSalon.id,
       name: faker.person.fullName(),
       email: faker.internet.email(),
-      phone: faker.phone.number("555-####"),
+      phone: faker.phone.number(),
       notes: faker.datatype.boolean() ? faker.lorem.sentence() : null,
     }));
 

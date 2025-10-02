@@ -70,9 +70,9 @@ export function ServiceStep() {
                   </p>
                 </div>
                 <div className="text-right">
-                  <span className="font-semibold">${service.price}</span>
+                  <span className="font-semibold">${(service.priceCents / 100).toFixed(2)}</span>
                   <p className="text-sm text-muted-foreground">
-                    {service.duration} min
+                    {service.durationMinutes} min
                   </p>
                 </div>
               </div>

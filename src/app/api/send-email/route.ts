@@ -5,21 +5,33 @@ import { env } from "@/env";
 import { db } from "@/drizzle";
 import { barbers } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
+import { rateLimit, getClientIdentifier } from "@/lib/rate-limit";
 
 const resend = new Resend(env.NEXT_PUBLIC_RESEND_API_KEY);
 
 export async function POST(request: Request) {
+  // Apply rate limiting: 5 emails per minute to prevent abuse
+  const identifier = getClientIdentifier(request);
+  const rateLimitResult = rateLimit(identifier, { maxRequests: 5, windowSeconds: 60 });
+
+  if (!rateLimitResult.success) {
+    return NextResponse.json(
+      { error: "Too many email requests. Please try again later." },
+      { status: 429 }
+    );
+  }
+
   try {
     const { appointment, type } = await request.json();
 
     if (type === "confirmation") {
-      const { customerName, start, barberId, serviceId } = appointment;
+      const { customerName, start, barberId } = appointment;
 
       // Get service and barber details (replace with your actual data fetching)
       const service = "Haircut"; // Replace with actual service name
       const barberName = "John Doe"; // Replace with actual barber name
 
-      const barber = await db.query.barbers.findFirst({
+      const _barber = await db.query.barbers.findFirst({
         where: eq(barbers.id, barberId),
       });
 
