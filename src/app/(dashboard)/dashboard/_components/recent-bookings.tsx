@@ -60,7 +60,7 @@ export function RecentBookings() {
       ?.filter(
         (booking) =>
           selectedDay === "all" ||
-          booking.appointmentAt.toISOString().split("T")[0] === selectedDay,
+          (booking.appointmentAt && booking.appointmentAt.toISOString().split("T")[0] === selectedDay),
       )
       .filter((booking) => {
         const term = searchTerm.toLowerCase();
@@ -143,10 +143,10 @@ export function RecentBookings() {
                     <TableCell>{booking.service}</TableCell>
                     <TableCell>{booking.barber}</TableCell>
                     <TableCell>
-                      {format(new Date(booking.appointmentAt), "MMM d, yyyy")}
+                      {booking.appointmentAt ? format(new Date(booking.appointmentAt), "MMM d, yyyy") : "N/A"}
                     </TableCell>
                     <TableCell>
-                      {format(new Date(booking.appointmentAt), "h:mm a")}
+                      {booking.appointmentAt ? format(new Date(booking.appointmentAt), "h:mm a") : "N/A"}
                     </TableCell>
                     <TableCell className="text-sm">
                       <div>{booking.customerEmail}</div>

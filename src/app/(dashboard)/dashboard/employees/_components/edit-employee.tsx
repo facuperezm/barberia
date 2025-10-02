@@ -46,13 +46,15 @@ export function EditEmployeeDialog({
   }, [employee]);
 
   const handleSubmit = () => {
+    if (!employee) return;
+    
     onSave({
-      id: employee?.id || 0,
+      ...employee,
       name: formData.name,
       email: formData.email,
-      phone: formData.phone,
-      imageUrl: formData.imageUrl,
-      createdAt: new Date(),
+      phone: formData.phone || null,
+      imageUrl: formData.imageUrl || null,
+      updatedAt: new Date(),
     });
   };
 

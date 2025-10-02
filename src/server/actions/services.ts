@@ -22,9 +22,9 @@ interface ActionResponse {
 }
 
 /**
- * Updates the price of a service.
- * @param formData - The form data containing service ID and new price.
- * @returns An object indicating success or failure.
+ * Updates the price of a service (requires authentication)
+ * @param formData - Form data containing serviceId and price
+ * @returns Action response with success status
  */
 export async function updateServicePrice(
   formData: FormData,
@@ -61,7 +61,6 @@ export async function updateServicePrice(
     revalidatePath("/dashboard/services");
     return { success: true };
   } catch (error) {
-    console.error("Error updating service price:", error);
     return { success: false, error: "Failed to update service price." };
   }
 }

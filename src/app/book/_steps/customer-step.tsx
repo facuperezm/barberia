@@ -44,7 +44,7 @@ export function CustomerStep() {
       <div className="space-y-2">
         <h2 className="text-xl font-semibold">Contact Information</h2>
         <p className="text-sm text-muted-foreground">
-          We'll use this information to confirm your appointment
+          We&apos;ll use this information to confirm your appointment
         </p>
       </div>
 

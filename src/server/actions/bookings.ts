@@ -5,6 +5,7 @@ import { appointments, barbers, services } from "@/drizzle/schema";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { sanitizeText, sanitizeEmail, sanitizePhone, sanitizeDate, sanitizeTime } from "@/lib/sanitize";
 
 const bookingSchema = z.object({
   barberId: z.number().int().positive("Please select a barber"),
@@ -26,6 +27,11 @@ interface BookingResponse {
   errors?: Record<string, string[]>;
 }
 
+/**
+ * Creates a booking with validation and optional payment flow
+ * @param input - Booking details including barber, service, customer info, and time slot
+ * @returns Booking response with appointment ID and optional payment redirect URL
+ */
 export async function createBookingAction(
   input: BookingInput
 ): Promise<BookingResponse> {
@@ -42,10 +48,25 @@ export async function createBookingAction(
 
     const { barberId, serviceId, customerName, customerEmail, customerPhone, date, time } = validatedData.data;
 
+    // Sanitize user inputs
+    const sanitizedCustomerName = sanitizeText(customerName);
+    const sanitizedCustomerEmail = sanitizeEmail(customerEmail);
+    const sanitizedCustomerPhone = sanitizePhone(customerPhone);
+    const sanitizedDate = sanitizeDate(date);
+    const sanitizedTime = sanitizeTime(time);
+
+    // Validate sanitized inputs
+    if (!sanitizedCustomerName || !sanitizedCustomerEmail || !sanitizedCustomerPhone || !sanitizedDate || !sanitizedTime) {
+      return {
+        success: false,
+        error: "Invalid input data. Please check your information.",
+      };
+    }
+
     // Format time to include seconds
-    const formattedTime = time.includes(':') && time.split(':').length === 2 
-      ? `${time}:00` 
-      : time;
+    const formattedTime = sanitizedTime.includes(':') && sanitizedTime.split(':').length === 2 
+      ? `${sanitizedTime}:00` 
+      : sanitizedTime;
 
     // Start a transaction
     const result = await db.transaction(async (tx) => {
@@ -78,7 +99,7 @@ export async function createBookingAction(
         .where(
           and(
             eq(appointments.barberId, barberId),
-            eq(appointments.date, date),
+            eq(appointments.date, sanitizedDate),
             eq(appointments.time, formattedTime),
             eq(appointments.status, "confirmed")
           )
@@ -90,7 +111,7 @@ export async function createBookingAction(
       }
 
       // Create appointment
-      const appointmentDateTime = new Date(`${date}T${formattedTime}`);
+      const appointmentDateTime = new Date(`${sanitizedDate}T${formattedTime}`);
       const endDateTime = new Date(
         appointmentDateTime.getTime() + service.durationMinutes * 60000
       );
@@ -105,11 +126,11 @@ export async function createBookingAction(
           endTime: endDateTime,
           status: "pending",
           // Legacy fields for compatibility
-          date,
+          date: sanitizedDate,
           time: formattedTime,
-          customerName,
-          customerEmail,
-          customerPhone,
+          customerName: sanitizedCustomerName,
+          customerEmail: sanitizedCustomerEmail,
+          customerPhone: sanitizedCustomerPhone,
         })
         .returning({ id: appointments.id });
 
@@ -117,7 +138,7 @@ export async function createBookingAction(
     });
 
     // If service requires payment, create payment preference
-    if (result.service.price && result.service.price > 0) {
+    if (result.service.priceCents && result.service.priceCents > 0) {
       // Create MercadoPago preference
       const paymentResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/mercadopago/preferences`, {
         method: "POST",
@@ -148,7 +169,6 @@ export async function createBookingAction(
       appointmentId: result.appointment.id,
     };
   } catch (error) {
-    console.error("Booking error:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to create booking",
@@ -156,15 +176,22 @@ export async function createBookingAction(
   }
 }
 
+/**
+ * Checks availability for a barber on a specific date
+ * @param barberId - ID of the barber
+ * @param date - Date to check availability for (YYYY-MM-DD format)
+ * @param _serviceId - Service ID (currently unused, reserved for future use)
+ * @returns Available time slots
+ */
 export async function checkAvailabilityAction(
   barberId: number,
   date: string,
-  serviceId: number
+  _serviceId: number
 ) {
   try {
     // Implementation for checking availability
     // This would return available time slots
-    const availableSlots = await db.select()
+    await db.select()
       .from(appointments)
       .where(
         and(
@@ -176,10 +203,10 @@ export async function checkAvailabilityAction(
 
     // Logic to calculate available slots based on working hours
     // and existing appointments
+    // TODO: Implement slot calculation logic
     
     return { success: true, slots: [] };
   } catch (error) {
-    console.error("Availability check error:", error);
     return { success: false, error: "Failed to check availability" };
   }
 } 

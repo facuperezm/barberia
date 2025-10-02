@@ -4,8 +4,12 @@ import { db } from "@/drizzle";
 import { payments, appointments } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
+/**
+ * Creates a MercadoPago payment preference for an appointment
+ * @param appointmentId - The appointment ID to create payment for
+ * @returns Payment preference with init point URLs for checkout
+ */
 export async function createPaymentPreference(appointmentId: number) {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/mercadopago/preferences`, {
@@ -30,7 +34,6 @@ export async function createPaymentPreference(appointmentId: number) {
       },
     };
   } catch (error) {
-    console.error('Error creating payment preference:', error);
     return {
       success: false,
       error: 'Failed to create payment preference',
@@ -38,6 +41,11 @@ export async function createPaymentPreference(appointmentId: number) {
   }
 }
 
+/**
+ * Retrieves payment status and details for an appointment
+ * @param appointmentId - The appointment ID to check payment for
+ * @returns Payment status, method, amount, and MercadoPago details
+ */
 export async function getPaymentStatus(appointmentId: number) {
   try {
     const payment = await db
@@ -63,12 +71,17 @@ export async function getPaymentStatus(appointmentId: number) {
       },
     };
   } catch (error) {
-    console.error('Error fetching payment status:', error);
     return { success: false, error: 'Failed to fetch payment status' };
   }
 }
 
-export async function handlePaymentSuccess(appointmentId: number, paymentId?: string) {
+/**
+ * Handles successful payment by confirming the appointment
+ * @param appointmentId - The appointment ID that was paid
+ * @param _paymentId - Payment ID (currently unused, reserved for future use)
+ * @returns Success status
+ */
+export async function handlePaymentSuccess(appointmentId: number, _paymentId?: string) {
   try {
     // Update appointment status to confirmed
     await db
@@ -84,11 +97,15 @@ export async function handlePaymentSuccess(appointmentId: number, paymentId?: st
     
     return { success: true };
   } catch (error) {
-    console.error('Error handling payment success:', error);
     return { success: false, error: 'Failed to process payment success' };
   }
 }
 
+/**
+ * Handles failed payment by cancelling the appointment
+ * @param appointmentId - The appointment ID that failed payment
+ * @returns Success status
+ */
 export async function handlePaymentFailure(appointmentId: number) {
   try {
     // Update appointment status to cancelled
@@ -105,7 +122,6 @@ export async function handlePaymentFailure(appointmentId: number) {
     
     return { success: true };
   } catch (error) {
-    console.error('Error handling payment failure:', error);
     return { success: false, error: 'Failed to process payment failure' };
   }
 } 

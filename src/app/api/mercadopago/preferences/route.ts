@@ -56,12 +56,13 @@ export async function POST(request: NextRequest) {
     // Create the preference
     const preference = new Preference(client);
 
+    const appointmentDate = appt.appointmentAt || new Date();
     const preferenceData = {
       items: [
         {
           id: `appointment-${appt.id}`,
           title: `${service.name} - ${salon.name}`,
-          description: `Appointment on ${appt.appointmentAt.toLocaleDateString()} at ${appt.appointmentAt.toLocaleTimeString()}`,
+          description: `Appointment on ${appointmentDate.toLocaleDateString()} at ${appointmentDate.toLocaleTimeString()}`,
           quantity: 1,
           unit_price: service.priceCents / 100, // Convert cents to currency
           currency_id: "ARS", // Adjust based on your country

@@ -3,6 +3,7 @@ import { db } from "@/drizzle";
 import { appointments, scheduleOverrides, services } from "@/drizzle/schema";
 import { and, eq } from "drizzle-orm";
 import { format, addMinutes, parse } from "date-fns";
+import { rateLimit, getClientIdentifier } from "@/lib/rate-limit";
 
 // Generate time slots between start and end times
 function generateTimeSlots(start: string, end: string, duration: number = 30) {
@@ -56,6 +57,17 @@ function isSlotBlockedByAppointment(
 }
 
 export async function GET(request: Request) {
+  // Apply rate limiting: 30 requests per minute
+  const identifier = getClientIdentifier(request);
+  const rateLimitResult = rateLimit(identifier, { maxRequests: 30, windowSeconds: 60 });
+
+  if (!rateLimitResult.success) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { status: 429 }
+    );
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const dateStr = searchParams.get("date");
@@ -69,9 +81,6 @@ export async function GET(request: Request) {
         { status: 400 },
       );
     }
-
-    // Parse the date string to a Date object
-    const date = new Date(dateStr);
 
     // Format date for database query (YYYY-MM-DD)
     const formattedDate = format(dateStr, "yyyy-MM-dd");
@@ -120,7 +129,7 @@ export async function GET(request: Request) {
       .from(services)
       .where(eq(services.id, parseInt(serviceId)));
     if (service) {
-      serviceDuration = service.duration;
+      serviceDuration = service.durationMinutes;
     } else {
       console.warn(
         `Service with ID ${serviceId} not found. Using default duration.`,

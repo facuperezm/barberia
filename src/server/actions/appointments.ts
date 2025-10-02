@@ -39,6 +39,11 @@ interface AppointmentResponse {
   status: string | null;
 }
 
+/**
+ * Creates a new appointment with customer information
+ * @param formData - Form data containing appointment details
+ * @returns Action response with success status and appointment data or errors
+ */
 export async function createAppointment(
   formData: FormData,
 ): Promise<ActionResponse> {
@@ -146,6 +151,10 @@ export async function createAppointment(
   }
 }
 
+/**
+ * Retrieves all appointments with related barber, service, and customer information
+ * @returns List of appointments with success status
+ */
 export async function getAppointments() {
   try {
     const allAppointments = await db
@@ -166,11 +175,16 @@ export async function getAppointments() {
 
     return { success: true, appointments: allAppointments };
   } catch (error) {
-    console.error("Error fetching appointments:", error);
     return { success: false, error: "Failed to fetch appointments" };
   }
 }
 
+/**
+ * Updates the status of an appointment (requires authentication)
+ * @param id - Appointment ID
+ * @param status - New status value
+ * @returns Updated appointment data with success status
+ */
 export async function updateAppointmentStatus(id: number, status: string) {
   const { userId } = await auth();
   if (!userId) {
@@ -186,7 +200,6 @@ export async function updateAppointmentStatus(id: number, status: string) {
 
     return { success: true, appointment: updated };
   } catch (error) {
-    console.error("Error updating appointment:", error);
     return { success: false, error: "Failed to update appointment" };
   }
 }

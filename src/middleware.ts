@@ -10,16 +10,21 @@ const isProtectedRoute = createRouteMatcher([
 
 export default clerkMiddleware(async (auth, req) => {
   const { userId, sessionClaims, redirectToSignIn } = await auth();
-  if (!userId && isProtectedRoute(req))
+  
+  // Redirect to sign-in if accessing protected route without authentication
+  if (!userId && isProtectedRoute(req)) {
     return redirectToSignIn({ returnBackUrl: req.url });
+  }
 
-  if (
-    userId &&
-    !sessionClaims?.email &&
-    !String(sessionClaims?.email).includes(env.OWNER_EMAIL) &&
-    req.nextUrl.pathname.startsWith("/dashboard")
-  )
-    await auth.protect();
+  // For dashboard routes, verify user is the owner
+  if (userId && req.nextUrl.pathname.startsWith("/dashboard")) {
+    const userEmail = sessionClaims?.email as string | undefined;
+    
+    // If user email doesn't match owner email, deny access
+    if (!userEmail || userEmail !== env.OWNER_EMAIL) {
+      await auth.protect();
+    }
+  }
 });
 
 export const config = {

@@ -164,7 +164,7 @@ export function BookingForm() {
                   </button>
                   
                   {index < steps.length - 1 && (
-                    <div className="absolute left-10 right-0 top-5 h-0.5 -z-10">
+                    <div className="absolute left-10 right-0 top-5 -z-10 h-0.5">
                       <div 
                         className={cn(
                           "h-full transition-all",
