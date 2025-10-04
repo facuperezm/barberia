@@ -40,14 +40,19 @@ export async function deleteBarber(
 
   try {
     const salonId = await getCurrentSalonId();
-    await db
+    const deleteResult = await db
       .delete(barbers)
       .where(
         and(
           eq(barbers.id, parseInt(id)),
           eq(barbers.salonId, salonId),
         ),
-      );
+      )
+      .returning();
+
+    if (deleteResult.length === 0) {
+      return { success: false, error: "Barber not found or access denied." };
+    }
 
     revalidatePath("/dashboard/barbers");
     return { success: true };
