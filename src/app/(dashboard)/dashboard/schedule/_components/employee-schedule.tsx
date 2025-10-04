@@ -24,9 +24,9 @@ import { getAllEmployees } from "@/server/actions/barbers";
 import { getWeeklySchedule } from "@/server/actions/schedule";
 interface Appointment {
   id: number;
-  customerName: string;
+  customerName: string | null;
   service: string;
-  time: string;
+  time: string | null;
   status: "pending" | "confirmed" | "cancelled" | "completed";
 }
 
