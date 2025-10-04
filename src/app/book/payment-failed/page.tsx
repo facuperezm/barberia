@@ -1,12 +1,13 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { XCircle } from "lucide-react";
 import Link from "next/link";
 
-export default function PaymentFailedPage() {
+function PaymentFailedContent() {
   const searchParams = useSearchParams();
   const appointmentId = searchParams.get("appointment");
 
@@ -23,7 +24,7 @@ export default function PaymentFailedPage() {
           <p className="text-muted-foreground">
             Unfortunately, your payment could not be processed. Your appointment has been cancelled.
           </p>
-          
+
           {appointmentId && (
             <p className="text-sm text-muted-foreground">
               Appointment ID: {appointmentId}
@@ -41,5 +42,13 @@ export default function PaymentFailedPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function PaymentFailedPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center">Loading...</div>}>
+      <PaymentFailedContent />
+    </Suspense>
   );
 } 

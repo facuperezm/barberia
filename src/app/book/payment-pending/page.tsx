@@ -1,12 +1,13 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock } from "lucide-react";
 import Link from "next/link";
 
-export default function PaymentPendingPage() {
+function PaymentPendingContent() {
   const searchParams = useSearchParams();
   const appointmentId = searchParams.get("appointment");
 
@@ -23,11 +24,11 @@ export default function PaymentPendingPage() {
           <p className="text-muted-foreground">
             Your payment is being processed. We&apos;ll notify you once it&apos;s confirmed.
           </p>
-          
+
           <p className="text-sm text-muted-foreground">
             Your appointment is temporarily reserved while we process your payment.
           </p>
-          
+
           {appointmentId && (
             <p className="text-sm text-muted-foreground">
               Appointment ID: {appointmentId}
@@ -45,5 +46,13 @@ export default function PaymentPendingPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function PaymentPendingPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center">Loading...</div>}>
+      <PaymentPendingContent />
+    </Suspense>
   );
 } 
