@@ -64,9 +64,9 @@ export const salons = pgTable(
   {
     id: serial("id").primaryKey(),
     name: text("name").notNull(),
-    slug: text("slug").notNull().unique(), // For URL-friendly identification
+    slug: text("slug").notNull(), // For URL-friendly identification
     ownerName: text("owner_name").notNull(),
-    email: text("email").notNull().unique(),
+    email: text("email").notNull(),
     phone: text("phone"),
     address: text("address"),
     timezone: text("timezone").notNull().default("UTC"),
@@ -78,11 +78,11 @@ export const salons = pgTable(
       .defaultNow()
       .notNull(),
   },
-  (table) => ({
-    slugIdx: uniqueIndex("salons_slug_idx").on(table.slug),
-    emailIdx: uniqueIndex("salons_email_idx").on(table.email),
-    activeIdx: index("salons_active_idx").on(table.isActive),
-  }),
+  (table) => [
+    uniqueIndex("salons_slug_idx").on(table.slug),
+    uniqueIndex("salons_email_idx").on(table.email),
+    index("salons_active_idx").on(table.isActive),
+  ],
 );
 
 export type Salon = typeof salons.$inferSelect;
@@ -112,14 +112,14 @@ export const barbers = pgTable(
       .defaultNow()
       .notNull(),
   },
-  (table) => ({
-    salonIdIdx: index("barbers_salon_id_idx").on(table.salonId),
-    emailSalonIdx: uniqueIndex("barbers_email_salon_idx").on(
+  (table) => [
+    index("barbers_salon_id_idx").on(table.salonId),
+    uniqueIndex("barbers_email_salon_idx").on(
       table.email,
       table.salonId,
     ),
-    activeIdx: index("barbers_active_idx").on(table.isActive),
-  }),
+    index("barbers_active_idx").on(table.isActive),
+  ],
 );
 
 export type Barber = typeof barbers.$inferSelect;
@@ -148,15 +148,15 @@ export const services = pgTable(
       .defaultNow()
       .notNull(),
   },
-  (table) => ({
-    salonIdIdx: index("services_salon_id_idx").on(table.salonId),
-    activeIdx: index("services_active_idx").on(table.isActive),
-    priceCheck: check("services_price_positive", sql`${table.priceCents} > 0`),
-    durationCheck: check(
+  (table) => [
+    index("services_salon_id_idx").on(table.salonId),
+    index("services_active_idx").on(table.isActive),
+    check("services_price_positive", sql`${table.priceCents} > 0`),
+    check(
       "services_duration_positive",
       sql`${table.durationMinutes} > 0`,
     ),
-  }),
+  ],
 );
 
 export type Service = typeof services.$inferSelect;
@@ -184,14 +184,14 @@ export const customers = pgTable(
       .defaultNow()
       .notNull(),
   },
-  (table) => ({
-    salonIdIdx: index("customers_salon_id_idx").on(table.salonId),
-    emailSalonIdx: uniqueIndex("customers_email_salon_idx").on(
+  (table) => [
+    index("customers_salon_id_idx").on(table.salonId),
+    uniqueIndex("customers_email_salon_idx").on(
       table.email,
       table.salonId,
     ),
-    phoneIdx: index("customers_phone_idx").on(table.phone),
-  }),
+    index("customers_phone_idx").on(table.phone),
+  ],
 );
 
 export type Customer = typeof customers.$inferSelect;
@@ -219,21 +219,21 @@ export const workingHours = pgTable(
       .defaultNow()
       .notNull(),
   },
-  (table) => ({
-    barberDayIdx: uniqueIndex("working_hours_barber_day_idx").on(
+  (table) => [
+    uniqueIndex("working_hours_barber_day_idx").on(
       table.barberId,
       table.dayOfWeek,
     ),
-    dayOfWeekCheck: check(
+    check(
       "working_hours_day_valid",
       sql`${table.dayOfWeek} >= 0 AND ${table.dayOfWeek} <= 6`,
     ),
     // Only validate time constraint when actually working
-    timeCheck: check(
+    check(
       "working_hours_time_valid",
       sql`${table.isWorking} = false OR ${table.startTime} < ${table.endTime}`,
     ),
-  }),
+  ],
 );
 
 export type WorkingHour = typeof workingHours.$inferSelect;
@@ -262,13 +262,13 @@ export const scheduleOverrides = pgTable(
       .defaultNow()
       .notNull(),
   },
-  (table) => ({
-    barberDateIdx: uniqueIndex("schedule_overrides_barber_date_idx").on(
+  (table) => [
+    uniqueIndex("schedule_overrides_barber_date_idx").on(
       table.barberId,
       table.date,
     ),
-    dateIdx: index("schedule_overrides_date_idx").on(table.date),
-  }),
+    index("schedule_overrides_date_idx").on(table.date),
+  ],
 );
 
 export type ScheduleOverride = typeof scheduleOverrides.$inferSelect;
@@ -315,30 +315,32 @@ export const appointments = pgTable(
       .defaultNow()
       .notNull(),
   },
-  (table) => ({
-    salonIdIdx: index("appointments_salon_id_idx").on(table.salonId),
-    barberIdIdx: index("appointments_barber_id_idx").on(table.barberId),
-    customerIdIdx: index("appointments_customer_id_idx").on(table.customerId),
-    appointmentAtIdx: index("appointments_appointment_at_idx").on(
+  (table) => [
+    index("appointments_salon_id_idx").on(table.salonId),
+    index("appointments_barber_id_idx").on(table.barberId),
+    index("appointments_customer_id_idx").on(table.customerId),
+    index("appointments_appointment_at_idx").on(
       table.appointmentAt,
     ),
-    statusIdx: index("appointments_status_idx").on(table.status),
-    barberDateIdx: index("appointments_barber_date_idx").on(
+    index("appointments_status_idx").on(table.status),
+    index("appointments_barber_date_idx").on(
       table.barberId,
       table.appointmentAt,
     ),
+    // Composite index for common queries
+    index("appointments_salon_status_idx").on(table.salonId, table.status),
     // Legacy indexes for backward compatibility
-    dateIdx: index("appointments_date_idx").on(table.date),
-    barberDateLegacyIdx: index("appointments_barber_date_legacy_idx").on(
+    index("appointments_date_idx").on(table.date),
+    index("appointments_barber_date_legacy_idx").on(
       table.barberId,
       table.date,
     ),
-    // Prevent overlapping appointments for the same barber
-    noOverlapCheck: check(
+    // Prevent overlapping appointments (only when both fields are not null)
+    check(
       "appointments_no_overlap",
-      sql`${table.appointmentAt} < ${table.endTime}`,
+      sql`${table.appointmentAt} IS NULL OR ${table.endTime} IS NULL OR ${table.appointmentAt} < ${table.endTime}`,
     ),
-  }),
+  ],
 );
 
 export type Appointment = typeof appointments.$inferSelect;
@@ -354,24 +356,23 @@ export const ratings = pgTable(
     id: serial("id").primaryKey(),
     appointmentId: integer("appointment_id")
       .references(() => appointments.id, { onDelete: "cascade" })
-      .notNull()
-      .unique(), // One rating per appointment
+      .notNull(), // One rating per appointment (enforced by unique index)
     rating: integer("rating").notNull(),
     comment: text("comment"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
   },
-  (table) => ({
-    appointmentIdIdx: uniqueIndex("ratings_appointment_id_idx").on(
+  (table) => [
+    uniqueIndex("ratings_appointment_id_idx").on(
       table.appointmentId,
     ),
-    ratingIdx: index("ratings_rating_idx").on(table.rating),
-    ratingCheck: check(
+    index("ratings_rating_idx").on(table.rating),
+    check(
       "ratings_rating_valid",
       sql`${table.rating} >= 1 AND ${table.rating} <= 5`,
     ),
-  }),
+  ],
 );
 
 export type Rating = typeof ratings.$inferSelect;
@@ -413,30 +414,32 @@ export const payments = pgTable(
       .defaultNow()
       .notNull(),
   },
-  (table) => ({
-    appointmentIdIdx: index("payments_appointment_id_idx").on(
+  (table) => [
+    index("payments_appointment_id_idx").on(
       table.appointmentId,
     ),
-    statusIdx: index("payments_status_idx").on(table.status),
-    methodIdx: index("payments_method_idx").on(table.method),
-    stripeIdIdx: index("payments_stripe_id_idx").on(
+    index("payments_status_idx").on(table.status),
+    index("payments_method_idx").on(table.method),
+    index("payments_stripe_id_idx").on(
       table.stripePaymentIntentId,
     ),
+    // Composite index for common payment queries
+    index("payments_appointment_status_idx").on(table.appointmentId, table.status),
     // MercadoPago indexes
-    mercadopagoPaymentIdIdx: index("payments_mercadopago_payment_id_idx").on(
+    index("payments_mercadopago_payment_id_idx").on(
       table.mercadopagoPaymentId,
     ),
-    mercadopagoPreferenceIdIdx: index("payments_mercadopago_preference_id_idx").on(
+    index("payments_mercadopago_preference_id_idx").on(
       table.mercadopagoPreferenceId,
     ),
-    mercadopagoExternalRefIdx: index("payments_mercadopago_external_ref_idx").on(
+    index("payments_mercadopago_external_ref_idx").on(
       table.mercadopagoExternalReference,
     ),
-    amountCheck: check(
+    check(
       "payments_amount_positive",
       sql`${table.amountCents} > 0`,
     ),
-  }),
+  ],
 );
 
 export type Payment = typeof payments.$inferSelect;
@@ -462,13 +465,6 @@ export const barbersRelations = relations(barbers, ({ many, one }) => ({
   scheduleOverrides: many(scheduleOverrides),
   appointments: many(appointments),
 }));
-
-// Helper function to get current salon ID from context
-export const getCurrentSalonId = (): number => {
-  // This will be implemented based on your authentication system
-  // For now, return a default salon ID (you'll need to implement this)
-  return 1; // TODO: Get from auth context
-};
 
 export const servicesRelations = relations(services, ({ many, one }) => ({
   salon: one(salons, {
