@@ -50,7 +50,7 @@ export async function updateServicePrice(
   try {
     const updated = await db
       .update(services)
-      .set({ price: Number(parsed.data.price) })
+      .set({ priceCents: Math.round(Number(parsed.data.price) * 100) })
       .where(eq(services.id, Number(parsed.data.serviceId)))
       .returning();
 
