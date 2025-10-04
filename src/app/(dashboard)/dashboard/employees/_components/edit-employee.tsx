@@ -47,7 +47,7 @@ export function EditEmployeeDialog({
 
   const handleSubmit = () => {
     if (!employee) return;
-    
+
     onSave({
       ...employee,
       name: formData.name,
