@@ -10,9 +10,9 @@ import { addDays, startOfWeek } from "date-fns";
 
 interface Appointment {
   id: number;
-  customerName: string;
+  customerName: string | null;
   service: string;
-  time: string;
+  time: string | null;
   status: "pending" | "confirmed" | "cancelled" | "completed";
 }
 
@@ -54,7 +54,7 @@ export async function getWeeklySchedule(
 
   fetchedAppointments.forEach((apt) => {
     if (!apt.date) return; // Skip appointments without dates
-    
+
     const dateKey = apt.date.toString().split("T")[0]; // YYYY-MM-DD
     if (!scheduleMap[dateKey]) {
       scheduleMap[dateKey] = [];
