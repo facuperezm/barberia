@@ -17,7 +17,7 @@
     "db:seed": "tsx --env-file .env src/drizzle/seed/seed.ts"
   },
   "dependencies": {
-    "@clerk/nextjs": "^6.21.0",
+    "@clerk/nextjs": "^6.33.2",
     "@hookform/resolvers": "^3.10.0",
     "@neondatabase/serverless": "^0.10.4",
     "@radix-ui/react-avatar": "^1.1.10",
@@ -35,7 +35,7 @@
     "@radix-ui/react-tabs": "^1.1.12",
     "@radix-ui/react-toast": "^1.2.14",
     "@radix-ui/react-tooltip": "^1.2.7",
-    "@react-email/components": "^0.0.25",
+    "@react-email/components": "^0.5.5",
     "@react-email/tailwind": "^0.1.0",
     "@t3-oss/env-nextjs": "^0.11.1",
     "@tanstack/react-query": "^5.80.6",
@@ -49,7 +49,7 @@
     "drizzle-orm": "^0.44.2",
     "lucide-react": "^0.453.0",
     "mercadopago": "^2.8.0",
-    "next": "15.3.3",
+    "next": "15.5.4",
     "next-themes": "^0.4.6",
     "pg": "^8.16.0",
     "react": "19.1.0",
@@ -75,9 +75,9 @@
     "@types/react-big-calendar": "^1.16.2",
     "@types/react-dom": "npm:types-react-dom@19.0.0-rc.1",
     "@types/ws": "^8.18.1",
-    "@typescript-eslint/eslint-plugin": "^7.18.0",
-    "drizzle-kit": "^0.31.1",
-    "eslint": "8.57.1",
+    "@typescript-eslint/eslint-plugin": "^8.45.0",
+    "drizzle-kit": "^0.31.5",
+    "eslint": "9.37.0",
     "eslint-config-next": "15.3.3",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-react": "^7.37.5",
@@ -95,7 +95,10 @@
   "pnpm": {
     "overrides": {
       "@types/react": "npm:types-react@19.0.0-rc.1",
-      "@types/react-dom": "npm:types-react-dom@19.0.0-rc.1"
+      "@types/react-dom": "npm:types-react-dom@19.0.0-rc.1",
+      "esbuild@<=0.24.2": ">=0.25.0",
+      "brace-expansion@>=1.0.0 <=1.1.11": ">=1.1.12",
+      "brace-expansion@>=2.0.0 <=2.0.1": ">=2.0.2"
     }
   }
 }
