@@ -1,6 +1,5 @@
 "use server";
 import { db } from "@/drizzle";
-import { eq } from "drizzle-orm";
 import { services } from "@/drizzle/schema";
 import { type Service } from "@/drizzle/schema";
 
@@ -14,9 +13,5 @@ export async function getServices(): Promise<Service[]> {
   }
 }
 
-export async function updateServicePrice(formData: FormData) {
-  return db
-    .update(services)
-    .set({ priceCents: Number(formData.get("price")) })
-    .where(eq(services.id, Number(formData.get("serviceId"))));
-}
+// Note: Use updateServicePrice from @/server/actions/services.ts instead
+// That version includes proper auth checks

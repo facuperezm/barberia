@@ -4,6 +4,7 @@ import { db } from "@/drizzle";
 import { appointments, services, customers, salons } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 import { env } from "@/env";
+import { rateLimit, getClientIdentifier } from "@/lib/rate-limit";
 
 // Initialize MercadoPago client
 const client = new MercadoPagoConfig({
@@ -11,6 +12,23 @@ const client = new MercadoPagoConfig({
 });
 
 export async function POST(request: NextRequest) {
+  // Apply rate limiting: 10 requests per minute
+  const identifier = getClientIdentifier(request);
+  const rateLimitResult = rateLimit(identifier, { maxRequests: 10, windowSeconds: 60 });
+
+  if (!rateLimitResult.success) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      {
+        status: 429,
+        headers: {
+          "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
+          "X-RateLimit-Reset": new Date(rateLimitResult.resetTime).toISOString(),
+        }
+      }
+    );
+  }
+
   try {
     const body = await request.json();
     const { appointmentId } = body;

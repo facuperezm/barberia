@@ -7,7 +7,7 @@ import { barbers } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 import { rateLimit, getClientIdentifier } from "@/lib/rate-limit";
 
-const resend = new Resend(env.NEXT_PUBLIC_RESEND_API_KEY);
+const resend = new Resend(env.RESEND_API_KEY);
 
 export async function POST(request: Request) {
   // Apply rate limiting: 5 emails per minute to prevent abuse

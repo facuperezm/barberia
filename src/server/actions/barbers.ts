@@ -56,8 +56,7 @@ export async function deleteBarber(
 
     revalidatePath("/dashboard/barbers");
     return { success: true };
-  } catch (error) {
-    console.error("Error deleting barber:", error);
+  } catch {
     return { success: false, error: "Failed to delete barber." };
   }
 }
@@ -100,8 +99,7 @@ export async function addBarber(state: unknown, formData: FormData) {
       .returning();
     revalidatePath("/dashboard/barbers");
     return { success: true, barber: newBarber };
-  } catch (error) {
-    console.error("Error adding barber:", error);
+  } catch {
     return { success: false, error: "Failed to add barber." };
   }
 }
@@ -114,8 +112,7 @@ export async function getBarbers(): Promise<Barber[]> {
       .from(barbers)
       .where(eq(barbers.salonId, salonId));
     return allBarbers as Barber[];
-  } catch (error) {
-    console.error("Error fetching barbers:", error);
+  } catch {
     return [];
   }
 }
@@ -129,8 +126,7 @@ export async function getAllEmployees(): Promise<Barber[]> {
       .where(eq(barbers.salonId, salonId))
       .orderBy(asc(barbers.name));
     return result;
-  } catch (error) {
-    console.error("Error fetching employees:", error);
+  } catch {
     return [];
   }
 }

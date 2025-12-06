@@ -9,15 +9,15 @@ export const env = createEnv({
     // MercadoPago Server Variables
     MERCADOPAGO_ACCESS_TOKEN: z.string(),
     MERCADOPAGO_WEBHOOK_SECRET: z.string().optional(),
+    // Email Server Variable (server-only for security)
+    RESEND_API_KEY: z.string(),
   },
   client: {
-    NEXT_PUBLIC_RESEND_API_KEY: z.string(),
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string(),
     // MercadoPago Client Variables
     NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY: z.string(),
   },
   experimental__runtimeEnv: {
-    NEXT_PUBLIC_RESEND_API_KEY: process.env.NEXT_PUBLIC_RESEND_API_KEY,
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
     NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY:

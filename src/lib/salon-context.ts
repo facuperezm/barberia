@@ -12,7 +12,6 @@ export async function getCurrentSalonId(): Promise<number> {
   }
 
   const userEmail = user.emailAddresses[0].emailAddress;
-  console.log(userEmail);
   if (userEmail === env.OWNER_EMAIL) {
     const [salon] = await db.select().from(salons).limit(1);
     if (!salon) {

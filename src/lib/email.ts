@@ -3,8 +3,9 @@ import AppointmentConfirmationEmail from "@/components/emails/appointment-confir
 import AppointmentReminderEmail from "@/components/emails/appointment-reminder";
 import FeedbackRequestEmail from "@/components/emails/feedback-request";
 import { format } from "date-fns";
+import { env } from "@/env";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(env.RESEND_API_KEY);
 
 export async function sendAppointmentConfirmation({
   customerName,

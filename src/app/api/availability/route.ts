@@ -43,16 +43,6 @@ function isSlotBlockedByAppointment(
     (slotEnd > appointmentStart && slotEnd <= appointmentEnd) ||
     (slotStart <= appointmentStart && slotEnd >= appointmentEnd);
 
-  console.log("test");
-  console.log(
-    `Checking slot ${slotTime} - ${format(slotEnd, "HH:mm")} against appointment at ${format(
-      appointmentStart,
-      "HH:mm",
-    )} for duration ${appointment.duration} minutes: ${
-      isBlocked ? "Blocked" : "Available"
-    }`,
-  );
-
   return isBlocked;
 }
 
@@ -130,10 +120,6 @@ export async function GET(request: Request) {
       .where(eq(services.id, parseInt(serviceId)));
     if (service) {
       serviceDuration = service.durationMinutes;
-    } else {
-      console.warn(
-        `Service with ID ${serviceId} not found. Using default duration.`,
-      );
     }
 
     // Generate all possible time slots based on working hours and service duration
@@ -155,9 +141,6 @@ export async function GET(request: Request) {
       })
       .from(appointments)
       .where(eq(appointments.date, formattedDate));
-
-    // Log existing appointments for debugging
-    console.log("Existing Appointments:", existingAppointments);
 
     // Map slots to include availability
     const slotsWithAvailability = timeSlots.map((time) => {
