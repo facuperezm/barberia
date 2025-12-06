@@ -8,9 +8,9 @@ const isProtectedRoute = createRouteMatcher([
   "/dashboard",
 ]);
 
-export default clerkMiddleware(async (auth, req) => {
+export const proxy = clerkMiddleware(async (auth, req) => {
   const { userId, sessionClaims, redirectToSignIn } = await auth();
-  
+
   // Redirect to sign-in if accessing protected route without authentication
   if (!userId && isProtectedRoute(req)) {
     return redirectToSignIn({ returnBackUrl: req.url });
@@ -19,7 +19,7 @@ export default clerkMiddleware(async (auth, req) => {
   // For dashboard routes, verify user is the owner
   if (userId && req.nextUrl.pathname.startsWith("/dashboard")) {
     const userEmail = sessionClaims?.email as string | undefined;
-    
+
     // If user email doesn't match owner email, deny access
     if (!userEmail || userEmail !== env.OWNER_EMAIL) {
       await auth.protect();
