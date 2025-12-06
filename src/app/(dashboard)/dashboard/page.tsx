@@ -7,15 +7,18 @@ import { getAppointments } from "@/server/queries/appointments";
 import { getServices } from "@/server/queries/services";
 import { CardSkeleton } from "./_components/skeleton";
 import { unstable_cache } from "next/cache";
+import { getCurrentSalonId } from "@/lib/salon-context";
 
-const cachedAppointments = unstable_cache(
-  async () => await getAppointments(),
-  ["appointments"],
-  {
-    revalidate: 3600,
-    tags: ["appointments"],
-  },
-);
+const getCachedAppointments = (salonId: number) =>
+  unstable_cache(
+    async () => await getAppointments(salonId),
+    ["appointments", String(salonId)],
+    {
+      revalidate: 3600,
+      tags: ["appointments"],
+    },
+  );
+
 const cachedServices = unstable_cache(
   async () => await getServices(),
   ["services"],
@@ -26,7 +29,8 @@ const cachedServices = unstable_cache(
 );
 
 export default async function DashboardPage() {
-  const appointments = await cachedAppointments();
+  const salonId = await getCurrentSalonId();
+  const appointments = await getCachedAppointments(salonId)();
   const services = await cachedServices();
 
   if (!appointments || !services) {

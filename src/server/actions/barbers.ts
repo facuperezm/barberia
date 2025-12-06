@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/drizzle";
-import { barbers, workingHours } from "@/drizzle/schema";
+import { barbers, workingHours, salons } from "@/drizzle/schema";
 import { asc, eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -122,6 +122,38 @@ export async function getBarbers(): Promise<Barber[]> {
   }
 }
 
+/**
+ * Get barbers for public booking page (no auth required)
+ * Returns active barbers from the default salon
+ */
+export async function getPublicBarbers(): Promise<Barber[]> {
+  try {
+    const [defaultSalon] = await db
+      .select()
+      .from(salons)
+      .limit(1);
+
+    if (!defaultSalon) {
+      return [];
+    }
+
+    const allBarbers = await db
+      .select()
+      .from(barbers)
+      .where(
+        and(
+          eq(barbers.salonId, defaultSalon.id),
+          eq(barbers.isActive, true)
+        )
+      )
+      .orderBy(asc(barbers.name));
+
+    return allBarbers;
+  } catch {
+    return [];
+  }
+}
+
 export async function getAllEmployees(): Promise<Barber[]> {
   try {
     const salonId = await getCurrentSalonId();
@@ -152,29 +184,31 @@ export async function updateBarberSchedule(
     { isWorking: boolean; slots: { start: string; end: string }[] }
   >,
 ) {
-  await db.transaction(async (tx) => {
-    const valuesToInsert = Object.entries(schedule).map(
-      ([dayOfWeek, daySchedule]) => ({
-        barberId,
-        dayOfWeek: Number(dayOfWeek),
-        isWorking: daySchedule.isWorking,
-        startTime:
-          daySchedule.isWorking && daySchedule.slots.length > 0
-            ? daySchedule.slots[0].start
-            : "9:00",
-        endTime:
-          daySchedule.isWorking && daySchedule.slots.length > 0
-            ? daySchedule.slots[0].end
-            : "17:00",
-      }),
-    );
+  const valuesToInsert = Object.entries(schedule).map(
+    ([dayOfWeek, daySchedule]) => ({
+      barberId,
+      dayOfWeek: Number(dayOfWeek),
+      isWorking: daySchedule.isWorking,
+      startTime:
+        daySchedule.isWorking && daySchedule.slots.length > 0
+          ? daySchedule.slots[0].start
+          : "09:00",
+      endTime:
+        daySchedule.isWorking && daySchedule.slots.length > 0
+          ? daySchedule.slots[0].end
+          : "17:00",
+    }),
+  );
 
+  if (valuesToInsert.length === 0) {
+    return { success: false, error: "No schedule data provided" };
+  }
+
+  await db.transaction(async (tx) => {
     await tx.delete(workingHours).where(eq(workingHours.barberId, barberId));
     await tx.insert(workingHours).values(valuesToInsert);
-
-    if (valuesToInsert.length === 0) {
-      tx.rollback();
-      return { success: false, error: "No values to insert" };
-    }
   });
+
+  revalidatePath("/dashboard/employees");
+  return { success: true };
 }

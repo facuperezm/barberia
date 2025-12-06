@@ -101,7 +101,7 @@ export default function AppointmentConfirmationEmail({
                 <Section className="mb-8">
                   <Button
                     className="w-full rounded-md bg-gray-900 px-6 py-3 text-center font-medium text-white"
-                    href={`${process.env.NEXT_PUBLIC_APP_URL}/appointments`}
+                    href={`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/appointments`}
                   >
                     View Appointment
                   </Button>

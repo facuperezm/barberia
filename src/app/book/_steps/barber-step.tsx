@@ -6,12 +6,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getBarbers as getBarbersServer } from "@/server/actions/barbers";
+import { getPublicBarbers } from "@/server/actions/barbers";
 import { type Barber } from "@/drizzle/schema";
 
 async function getBarbers(): Promise<Barber[]> {
-  const barbers = await getBarbersServer();
-  return barbers;
+  return getPublicBarbers();
 }
 
 export function BarberStep() {

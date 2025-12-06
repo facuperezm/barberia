@@ -1,5 +1,6 @@
 import { config } from "dotenv";
 import { defineConfig, type Config } from "drizzle-kit";
+import { env } from "./src/env";
 
 config({ path: ".env" });
 
@@ -10,6 +11,6 @@ export default defineConfig({
   strict: true,
   verbose: true,
   dbCredentials: {
-    url: process.env.DATABASE_URL!,
+    url: env.DATABASE_URL,
   },
 }) satisfies Config;

@@ -140,7 +140,7 @@ export async function createBookingAction(
     // If service requires payment, create payment preference
     if (result.service.priceCents && result.service.priceCents > 0) {
       // Create MercadoPago preference
-      const paymentResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/mercadopago/preferences`, {
+      const paymentResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/mercadopago/preferences`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ appointmentId: result.appointment.id }),

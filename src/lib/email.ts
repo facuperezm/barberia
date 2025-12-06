@@ -89,7 +89,7 @@ export async function sendFeedbackRequest({
   appointmentId: string;
 }) {
   try {
-    const feedbackUrl = `${process.env.NEXT_PUBLIC_APP_URL}/feedback/${appointmentId}`;
+    const feedbackUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/feedback/${appointmentId}`;
 
     await resend.emails.send({
       from: "Modern Barbershop <feedback@modern-barbershop.com>",

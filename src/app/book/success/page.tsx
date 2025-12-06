@@ -3,29 +3,97 @@
 import { useSearchParams } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarCheck, Mail, ArrowLeft } from "lucide-react";
+import { CalendarCheck, Mail, ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { getPublicAppointmentById } from "@/server/actions/appointments";
+
+interface AppointmentDetails {
+  id: number;
+  appointmentAt: Date | null;
+  barberName: string;
+  serviceName: string;
+  customerName: string | null;
+}
 
 export default function BookingSuccessPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<LoadingState />}>
       <BookingDetails />
     </Suspense>
   );
 }
 
+function LoadingState() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-lg space-y-6 p-8 text-center">
+        <Loader2 className="mx-auto size-8 animate-spin text-primary" />
+        <p className="text-muted-foreground">Loading your booking details...</p>
+      </Card>
+    </div>
+  );
+}
+
 function BookingDetails() {
   const searchParams = useSearchParams();
+  const appointmentId = searchParams.get("appointment");
 
-  const date = searchParams.get("date");
-  const time = searchParams.get("time");
-  const barber = searchParams.get("barber");
-  const service = searchParams.get("service");
+  const [appointment, setAppointment] = useState<AppointmentDetails | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const formattedDate = date
-    ? format(new Date(date), "EEEE, MMMM d, yyyy")
+  useEffect(() => {
+    async function fetchAppointment() {
+      if (!appointmentId) {
+        setError("No appointment ID provided");
+        setIsLoading(false);
+        return;
+      }
+
+      const result = await getPublicAppointmentById(parseInt(appointmentId));
+
+      if (result.success && result.appointment) {
+        setAppointment(result.appointment);
+      } else {
+        setError(result.error || "Failed to load appointment");
+      }
+      setIsLoading(false);
+    }
+
+    fetchAppointment();
+  }, [appointmentId]);
+
+  if (isLoading) {
+    return <LoadingState />;
+  }
+
+  if (error || !appointment) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-lg space-y-6 p-8 text-center">
+          <h1 className="text-2xl font-bold">Booking Complete</h1>
+          <p className="text-muted-foreground">
+            Your appointment has been booked. Please check your email for details.
+          </p>
+          <Link href="/">
+            <Button className="w-full">
+              <ArrowLeft className="mr-2 size-4" />
+              Return to Home
+            </Button>
+          </Link>
+        </Card>
+      </div>
+    );
+  }
+
+  const formattedDate = appointment.appointmentAt
+    ? format(new Date(appointment.appointmentAt), "EEEE, MMMM d, yyyy")
+    : "";
+
+  const formattedTime = appointment.appointmentAt
+    ? format(new Date(appointment.appointmentAt), "h:mm a")
     : "";
 
   return (
@@ -48,13 +116,15 @@ function BookingDetails() {
         <div className="space-y-4 rounded-lg bg-muted/50 p-6">
           <div className="space-y-2">
             <p className="text-lg font-medium">{formattedDate}</p>
-            <p className="font-semibold text-primary">{time}</p>
+            <p className="font-semibold text-primary">{formattedTime}</p>
           </div>
           <div className="space-y-1">
             <p>
-              with <span className="font-medium">{barber}</span>
+              with <span className="font-medium">{appointment.barberName}</span>
             </p>
-            <p className="text-sm text-muted-foreground">Service: {service}</p>
+            <p className="text-sm text-muted-foreground">
+              Service: {appointment.serviceName}
+            </p>
           </div>
         </div>
 

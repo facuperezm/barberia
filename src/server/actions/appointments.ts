@@ -248,6 +248,37 @@ export async function getAppointments() {
 }
 
 /**
+ * Get appointment details by ID (public - for success page)
+ * Returns limited info for display purposes
+ */
+export async function getPublicAppointmentById(appointmentId: number) {
+  try {
+    const [result] = await db
+      .select({
+        id: appointments.id,
+        appointmentAt: appointments.appointmentAt,
+        barberName: barbers.name,
+        serviceName: services.name,
+        // Use legacy fields as fallback for customer info
+        customerName: appointments.customerName,
+      })
+      .from(appointments)
+      .innerJoin(barbers, eq(appointments.barberId, barbers.id))
+      .innerJoin(services, eq(appointments.serviceId, services.id))
+      .where(eq(appointments.id, appointmentId))
+      .limit(1);
+
+    if (!result) {
+      return { success: false, error: "Appointment not found" };
+    }
+
+    return { success: true, appointment: result };
+  } catch {
+    return { success: false, error: "Failed to fetch appointment" };
+  }
+}
+
+/**
  * Updates appointment status with salon scoping
  */
 export async function updateAppointmentStatus(

@@ -1,12 +1,9 @@
 import { db } from "@/drizzle";
 import { appointments, barbers, services, customers } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
-import { getCurrentSalonId } from "@/lib/salon-context";
 
-export async function getAppointments() {
+export async function getAppointments(salonId: number) {
   try {
-    const salonId = await getCurrentSalonId();
-    
     return await db
       .select({
         id: appointments.id,
@@ -38,7 +35,6 @@ export async function getAppointments() {
       .where(eq(appointments.salonId, salonId));
   } catch (error) {
     console.error("Error fetching appointments:", error);
-    // Fallback to basic query if salon context fails
-    return await db.select().from(appointments);
+    return [];
   }
 }
