@@ -1,6 +1,7 @@
 "use server";
+
 import { db } from "@/drizzle";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import {
   appointments,
   barbers,
@@ -11,6 +12,7 @@ import {
 import { z } from "zod";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
+import { getCurrentSalonId } from "@/lib/salon-context";
 
 const appointmentSchema = z.object({
   barberId: z.number().int().positive(),
@@ -18,37 +20,30 @@ const appointmentSchema = z.object({
   customerName: z.string().min(1),
   customerEmail: z.string().email(),
   customerPhone: z.string().min(2),
-  date: z.string(),
-  time: z.string(), // HH:mm:ss format
+  appointmentAt: z.date(),
+  notes: z.string().optional(),
 });
 
 interface ActionResponse {
   success: boolean;
-  appointment?: AppointmentResponse;
+  appointment?: Appointment;
   error?: string;
   errors?: Record<string, string[]>;
 }
 
-interface AppointmentResponse {
-  id: number;
-  customerName: string | null;
-  customerEmail: string | null;
-  customerPhone: string | null;
-  date: string | null;
-  time: string | null;
-  status: string | null;
-}
-
 /**
- * Creates a new appointment with customer information
- * @param formData - Form data containing appointment details
- * @returns Action response with success status and appointment data or errors
+ * Creates a new appointment with proper salon scoping and customer management
  */
 export async function createAppointment(
-  formData: FormData,
+  data: z.infer<typeof appointmentSchema>,
 ): Promise<ActionResponse> {
-  const parsedData = appointmentSchema.safeParse(formData);
+  const { userId } = await auth();
 
+  if (!userId) {
+    return { success: false, error: "Unauthorized access." };
+  }
+
+  const parsedData = appointmentSchema.safeParse(data);
   if (!parsedData.success) {
     const { fieldErrors } = parsedData.error.flatten();
     return { success: false, errors: fieldErrors };
@@ -60,82 +55,118 @@ export async function createAppointment(
     customerName,
     customerEmail,
     customerPhone,
-    date,
-    time,
+    appointmentAt,
+    notes,
   } = parsedData.data;
 
-  const formattedDate = date.split("T")[0];
-
-  let formattedTime = time;
-  const timeRegex = /^([0-1]\d|2[0-3]):([0-5]\d)$/; // HH:mm format
-  if (timeRegex.test(time)) {
-    formattedTime = `${time}:00`; // Append seconds if not present
-  }
-
   try {
+    const salonId = await getCurrentSalonId();
+
     const insertedAppointment = await db.transaction(async (tx) => {
+      // Verify barber belongs to current salon
       const barber = await tx
         .select()
         .from(barbers)
-        .where(eq(barbers.id, barberId))
+        .where(and(eq(barbers.id, barberId), eq(barbers.salonId, salonId)))
         .limit(1);
 
       if (barber.length === 0) {
-        throw new Error("Selected barber does not exist.");
+        throw new Error("Selected barber does not exist in your salon.");
       }
 
+      // Verify service belongs to current salon
       const service = await tx
         .select()
         .from(services)
-        .where(eq(services.id, serviceId))
+        .where(and(eq(services.id, serviceId), eq(services.salonId, salonId)))
         .limit(1);
 
       if (service.length === 0) {
-        throw new Error("Selected service does not exist.");
+        throw new Error("Selected service does not exist in your salon.");
       }
 
-      const existingAppointment = await tx
+      // Calculate end time based on service duration
+      const endTime = new Date(
+        appointmentAt.getTime() + service[0].durationMinutes * 60000,
+      );
+
+      // Check for overlapping appointments using proper timestamp comparison
+      const overlappingAppointments = await tx
         .select()
         .from(appointments)
         .where(
           and(
+            eq(appointments.salonId, salonId),
             eq(appointments.barberId, barberId),
-            eq(appointments.date, formattedDate),
-            eq(appointments.time, formattedTime),
+            sql`${appointments.appointmentAt} < ${endTime} AND ${appointments.endTime} > ${appointmentAt}`,
           ),
         )
         .limit(1);
 
-      if (existingAppointment.length > 0) {
-        throw new Error("The selected time slot is already booked.");
+      if (overlappingAppointments.length > 0) {
+        throw new Error(
+          "The selected time slot conflicts with an existing appointment.",
+        );
       }
 
-      // Create proper timestamp from date and time
-      const appointmentDateTime = new Date(`${formattedDate}T${formattedTime}`);
-      const endDateTime = new Date(appointmentDateTime.getTime() + service[0].durationMinutes * 60000);
+      // Find or create customer
+      const customer = await tx
+        .select()
+        .from(customers)
+        .where(
+          and(eq(customers.email, customerEmail), eq(customers.salonId, salonId)),
+        )
+        .limit(1);
 
-      const appointment = await tx
+      let customerId: number;
+      if (customer.length === 0) {
+        const [newCustomer] = await tx
+          .insert(customers)
+          .values({
+            salonId,
+            name: customerName,
+            email: customerEmail,
+            phone: customerPhone,
+          })
+          .returning();
+        customerId = newCustomer.id;
+      } else {
+        customerId = customer[0].id;
+        await tx
+          .update(customers)
+          .set({
+            name: customerName,
+            phone: customerPhone,
+            updatedAt: new Date(),
+          })
+          .where(eq(customers.id, customerId));
+      }
+
+      const [appointment] = await tx
         .insert(appointments)
         .values({
-          salonId: barber[0].salonId, // Add salon ID for proper scoping
+          salonId,
           barberId,
           serviceId,
-          appointmentAt: appointmentDateTime,
-          endTime: endDateTime,
+          customerId,
+          appointmentAt,
+          endTime,
           status: "pending",
+          notes,
           // Legacy fields for backward compatibility
-          date: formattedDate,
-          time: formattedTime,
+          date: appointmentAt.toISOString().split("T")[0],
+          time: appointmentAt.toTimeString().split(" ")[0],
           customerName,
           customerEmail,
           customerPhone,
         })
         .returning();
 
-      return appointment[0];
+      return appointment;
     });
 
     revalidatePath("/dashboard/appointments");
+    revalidatePath("/book");
 
     return {
       success: true,
@@ -146,60 +177,116 @@ export async function createAppointment(
       success: false,
       error:
         (error as Error).message ||
-        "Failed to create appointment, please try once again.",
+        "Failed to create appointment, please try again.",
     };
   }
 }
 
 /**
- * Retrieves all appointments with related barber, service, and customer information
- * @returns List of appointments with success status
+ * Legacy wrapper for FormData-based appointment creation
+ */
+export async function createAppointmentFromFormData(
+  formData: FormData,
+): Promise<ActionResponse> {
+  const date = formData.get("date") as string;
+  const time = formData.get("time") as string;
+
+  const appointmentAt = new Date(`${date}T${time}`);
+
+  const data = {
+    barberId: parseInt(formData.get("barberId") as string),
+    serviceId: parseInt(formData.get("serviceId") as string),
+    customerName: formData.get("customerName") as string,
+    customerEmail: formData.get("customerEmail") as string,
+    customerPhone: formData.get("customerPhone") as string,
+    appointmentAt,
+    notes: formData.get("notes") as string,
+  };
+
+  return createAppointment(data);
+}
+
+/**
+ * Retrieves all appointments for current salon with related data
  */
 export async function getAppointments() {
   try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return { success: false, error: "Unauthorized access." };
+    }
+
+    const salonId = await getCurrentSalonId();
+
     const allAppointments = await db
       .select({
         id: appointments.id,
+        appointmentAt: appointments.appointmentAt,
+        endTime: appointments.endTime,
+        status: appointments.status,
+        notes: appointments.notes,
+        barberName: barbers.name,
+        serviceName: services.name,
+        serviceDuration: services.durationMinutes,
+        servicePriceCents: services.priceCents,
         customerName: customers.name,
         customerEmail: customers.email,
         customerPhone: customers.phone,
-        appointmentAt: appointments.appointmentAt,
-        status: appointments.status,
-        barber: barbers.name,
-        service: services.name,
       })
       .from(appointments)
-      .leftJoin(barbers, eq(appointments.barberId, barbers.id))
-      .leftJoin(services, eq(appointments.serviceId, services.id))
-      .leftJoin(customers, eq(appointments.customerId, customers.id));
+      .innerJoin(barbers, eq(appointments.barberId, barbers.id))
+      .innerJoin(services, eq(appointments.serviceId, services.id))
+      .leftJoin(customers, eq(appointments.customerId, customers.id))
+      .where(eq(appointments.salonId, salonId))
+      .orderBy(appointments.appointmentAt);
 
     return { success: true, appointments: allAppointments };
-  } catch (error) {
+  } catch {
     return { success: false, error: "Failed to fetch appointments" };
   }
 }
 
 /**
- * Updates the status of an appointment (requires authentication)
- * @param id - Appointment ID
- * @param status - New status value
- * @returns Updated appointment data with success status
+ * Updates appointment status with salon scoping
  */
-export async function updateAppointmentStatus(id: number, status: string) {
+export async function updateAppointmentStatus(
+  appointmentId: number,
+  status: Appointment["status"],
+) {
   const { userId } = await auth();
+
   if (!userId) {
     return { success: false, error: "Unauthorized access." };
   }
 
   try {
+    const salonId = await getCurrentSalonId();
+
     const [updated] = await db
       .update(appointments)
-      .set({ status: status as Appointment["status"] })
-      .where(eq(appointments.id, id))
+      .set({
+        status,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(appointments.id, appointmentId),
+          eq(appointments.salonId, salonId),
+        ),
+      )
       .returning();
 
+    if (!updated) {
+      return {
+        success: false,
+        error: "Appointment not found or access denied.",
+      };
+    }
+
+    revalidatePath("/dashboard/appointments");
     return { success: true, appointment: updated };
-  } catch (error) {
+  } catch {
     return { success: false, error: "Failed to update appointment" };
   }
 }

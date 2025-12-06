@@ -24,8 +24,7 @@ const initialState = {
 
 export default function ClientDialog() {
   const [open, setOpen] = useState(false);
-  const [_state, formAction] = useActionState(addBarber, initialState);
-  // TODO: add form validation
+  const [, formAction] = useActionState(addBarber, initialState);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

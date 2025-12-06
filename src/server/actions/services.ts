@@ -23,10 +23,11 @@ interface ActionResponse {
 
 /**
  * Updates the price of a service (requires authentication)
+ * Returns ActionResponse for use with useActionState
  * @param formData - Form data containing serviceId and price
  * @returns Action response with success status
  */
-export async function updateServicePrice(
+export async function updateServicePriceWithResponse(
   formData: FormData,
 ): Promise<ActionResponse> {
   const { userId } = await auth();
@@ -60,7 +61,12 @@ export async function updateServicePrice(
 
     revalidatePath("/dashboard/services");
     return { success: true };
-  } catch (error) {
+  } catch {
     return { success: false, error: "Failed to update service price." };
   }
+}
+
+// Form action wrapper for React 19.2 compatibility (must return void)
+export async function updateServicePrice(formData: FormData): Promise<void> {
+  await updateServicePriceWithResponse(formData);
 }

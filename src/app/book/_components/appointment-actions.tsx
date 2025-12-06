@@ -11,17 +11,20 @@ import { MoreVertical, Check, X, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateAppointmentStatus } from "@/server/actions/appointments";
+import { type Appointment } from "@/drizzle/schema";
+
+type AppointmentStatus = Appointment["status"];
 
 interface AppointmentActionsProps {
   id: number;
-  status: string;
+  status: AppointmentStatus;
 }
 
 export function AppointmentActions({ id, status }: AppointmentActionsProps) {
   const queryClient = useQueryClient();
 
   const { mutate: updateAppointment, isPending: isUpdating } = useMutation({
-    mutationFn: (params: { id: number; status: string }) =>
+    mutationFn: (params: { id: number; status: AppointmentStatus }) =>
       updateAppointmentStatus(Number(params.id), params.status),
     onMutate: () => {
       toast.loading("Updating appointment status...");

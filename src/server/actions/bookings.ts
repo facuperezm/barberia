@@ -206,7 +206,7 @@ export async function checkAvailabilityAction(
     // TODO: Implement slot calculation logic
     
     return { success: true, slots: [] };
-  } catch (error) {
+  } catch {
     return { success: false, error: "Failed to check availability" };
   }
 } 

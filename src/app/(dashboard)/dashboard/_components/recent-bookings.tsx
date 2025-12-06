@@ -40,9 +40,7 @@ export function RecentBookings() {
   const { data: bookings, isLoading } = useQuery({
     queryKey: ["bookings"],
     queryFn: () => getAppointments(),
-    // staleTime: 1000 * 60 * 10, // 10 minutes
   });
-  console.log(bookings);
 
   // Generate week days for the select dropdown
   const today = new Date();
@@ -141,8 +139,8 @@ export function RecentBookings() {
                     <TableCell className="font-medium">
                       {booking.customerName}
                     </TableCell>
-                    <TableCell>{booking.service}</TableCell>
-                    <TableCell>{booking.barber}</TableCell>
+                    <TableCell>{booking.serviceName}</TableCell>
+                    <TableCell>{booking.barberName}</TableCell>
                     <TableCell>
                       {booking.appointmentAt
                         ? format(new Date(booking.appointmentAt), "MMM d, yyyy")

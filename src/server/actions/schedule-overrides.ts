@@ -62,7 +62,7 @@ export async function saveScheduleOverride(data: {
       .returning();
 
     return { success: true, override };
-  } catch (error) {
+  } catch {
     return { success: false, error: "Failed to save schedule override." };
   }
 }

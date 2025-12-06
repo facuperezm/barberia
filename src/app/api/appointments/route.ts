@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createAppointment } from "@/server/actions/appointments";
+import { createAppointmentFromFormData } from "@/server/actions/appointments";
 import { rateLimit, getClientIdentifier } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     
     formData.append("time", data.time || "");
 
-    const result = await createAppointment(formData);
+    const result = await createAppointmentFromFormData(formData);
 
     if (!result.success) {
       return NextResponse.json({ 

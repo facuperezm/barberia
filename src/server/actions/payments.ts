@@ -33,7 +33,7 @@ export async function createPaymentPreference(appointmentId: number) {
         sandboxInitPoint: data.sandbox_init_point,
       },
     };
-  } catch (error) {
+  } catch {
     return {
       success: false,
       error: 'Failed to create payment preference',
@@ -70,7 +70,7 @@ export async function getPaymentStatus(appointmentId: number) {
         updatedAt: payment[0]!.updatedAt,
       },
     };
-  } catch (error) {
+  } catch {
     return { success: false, error: 'Failed to fetch payment status' };
   }
 }
@@ -96,7 +96,7 @@ export async function handlePaymentSuccess(appointmentId: number, _paymentId?: s
     revalidatePath(`/dashboard/appointments`);
     
     return { success: true };
-  } catch (error) {
+  } catch {
     return { success: false, error: 'Failed to process payment success' };
   }
 }
@@ -121,7 +121,7 @@ export async function handlePaymentFailure(appointmentId: number) {
     revalidatePath(`/dashboard/appointments`);
     
     return { success: true };
-  } catch (error) {
+  } catch {
     return { success: false, error: 'Failed to process payment failure' };
   }
 } 

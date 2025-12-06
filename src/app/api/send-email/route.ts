@@ -25,13 +25,9 @@ export async function POST(request: Request) {
     const { appointment, type } = await request.json();
 
     if (type === "confirmation") {
-      const { customerName, start, barberId } = appointment;
+      const { customerName, customerEmail, start, barberId, serviceName } = appointment;
 
-      // Get service and barber details (replace with your actual data fetching)
-      const service = "Haircut"; // Replace with actual service name
-      const barberName = "John Doe"; // Replace with actual barber name
-
-      const _barber = await db.query.barbers.findFirst({
+      const barber = await db.query.barbers.findFirst({
         where: eq(barbers.id, barberId),
       });
 
@@ -43,14 +39,14 @@ export async function POST(request: Request) {
 
       const data = await resend.emails.send({
         from: "Modern Barbershop <appointments@modern-barbershop.com>",
-        to: ["customer@example.com"], // Replace with actual customer email
+        to: [customerEmail],
         subject: "Appointment Confirmation - Modern Barbershop",
         react: AppointmentConfirmationEmail({
           customerName,
           date,
           time,
-          service,
-          barberName,
+          service: serviceName || "Service",
+          barberName: barber?.name || "Your Barber",
         }),
       });
 

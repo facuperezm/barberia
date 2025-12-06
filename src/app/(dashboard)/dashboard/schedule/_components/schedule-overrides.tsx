@@ -85,7 +85,7 @@ export function ScheduleOverrides() {
       setIsWorkingDay(true);
       setTimeSlots([{ start: "09:00", end: "17:00" }]);
       setReason("");
-    } catch (error) {
+    } catch {
       toast.error("Failed to save schedule override");
     }
   };

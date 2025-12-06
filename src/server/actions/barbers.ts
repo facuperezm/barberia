@@ -23,7 +23,7 @@ interface ActionResponse {
   errors?: Record<string, string[]>;
 }
 
-export async function deleteBarber(
+export async function deleteBarberWithResponse(
   formData: FormData,
 ): Promise<ActionResponse> {
   const { userId } = await auth();
@@ -59,6 +59,11 @@ export async function deleteBarber(
   } catch {
     return { success: false, error: "Failed to delete barber." };
   }
+}
+
+// Form action wrapper for React 19.2 compatibility (must return void)
+export async function deleteBarber(formData: FormData): Promise<void> {
+  await deleteBarberWithResponse(formData);
 }
 
 export async function addBarber(state: unknown, formData: FormData) {
