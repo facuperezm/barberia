@@ -64,6 +64,8 @@
     "zod": "^3.25.56"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.3",
+    "@eslint/js": "^9.39.1",
     "@faker-js/faker": "^9.8.0",
     "@next/eslint-plugin-next": "16.0.7",
     "@types/eslint": "^9.6.1",
@@ -94,9 +96,7 @@
   },
   "pnpm": {
     "overrides": {
-      "esbuild@<=0.24.2": ">=0.25.0",
-      "brace-expansion@>=1.0.0 <=1.1.11": ">=1.1.12",
-      "brace-expansion@>=2.0.0 <=2.0.1": ">=2.0.2"
+      "esbuild@<=0.24.2": ">=0.25.0"
     }
   },
   "packageManager": "pnpm@10.24.0+sha512.01ff8ae71b4419903b65c60fb2dc9d34cf8bb6e06d03bde112ef38f7a34d6904c424ba66bea5cdcf12890230bf39f9580473140ed9c946fef328b6e5238a345a"

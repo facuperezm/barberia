@@ -1,15 +1,26 @@
 import "./../styles/globals.css";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Playfair_Display, DM_Sans } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { ClerkProvider } from "@clerk/nextjs";
 import Providers from "./providers";
 
-const inter = Inter({ subsets: ["latin"] });
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair",
+  display: "swap",
+});
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-dm-sans",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
-  title: "Modern Barbershop",
-  description: "Book your next haircut with our professional barbers",
+  title: "The Gentleman's Quarter | Premium Barbershop",
+  description:
+    "Experience the art of traditional grooming with a modern edge. Book your appointment at our distinguished barbershop.",
 };
 
 export default function RootLayout({
@@ -21,7 +32,9 @@ export default function RootLayout({
     <ClerkProvider>
       <Providers>
         <html lang="en" suppressHydrationWarning>
-          <body className={inter.className}>
+          <body
+            className={`${playfair.variable} ${dmSans.variable} font-body`}
+          >
             {children}
             <Toaster />
           </body>
