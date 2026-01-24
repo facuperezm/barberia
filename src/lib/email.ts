@@ -2,7 +2,7 @@ import { Resend } from "resend";
 import AppointmentConfirmationEmail from "@/components/emails/appointment-confirmation";
 import AppointmentReminderEmail from "@/components/emails/appointment-reminder";
 import FeedbackRequestEmail from "@/components/emails/feedback-request";
-import { format } from "date-fns";
+import { formatDate, toArgentinaDate } from "@/lib/dates";
 import { env } from "@/env";
 
 const resend = new Resend(env.RESEND_API_KEY);
@@ -29,7 +29,7 @@ export async function sendAppointmentConfirmation({
       subject: "Appointment Confirmation - Modern Barbershop",
       react: AppointmentConfirmationEmail({
         customerName,
-        date: format(date, "EEEE, MMMM d, yyyy"),
+        date: formatDate(toArgentinaDate(date), "full"),
         time,
         service,
         barberName,
@@ -63,7 +63,7 @@ export async function sendAppointmentReminder({
       subject: "Reminder: Your Appointment Tomorrow - Modern Barbershop",
       react: AppointmentReminderEmail({
         customerName,
-        date: format(date, "EEEE, MMMM d, yyyy"),
+        date: formatDate(toArgentinaDate(date), "full"),
         time,
         service,
         barberName,
@@ -97,7 +97,7 @@ export async function sendFeedbackRequest({
       subject: "How was your visit to Modern Barbershop?",
       react: FeedbackRequestEmail({
         customerName,
-        date: format(date, "EEEE, MMMM d, yyyy"),
+        date: formatDate(toArgentinaDate(date), "full"),
         barberName,
         feedbackUrl,
       }),

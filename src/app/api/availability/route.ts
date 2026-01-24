@@ -1,50 +1,18 @@
 import { NextResponse } from "next/server";
 import { db } from "@/drizzle";
-import { appointments, scheduleOverrides, services } from "@/drizzle/schema";
+import {
+  appointments,
+  scheduleOverrides,
+  services,
+  workingHours,
+} from "@/drizzle/schema";
 import { and, eq } from "drizzle-orm";
-import { format, addMinutes, parse } from "date-fns";
 import { rateLimit, getClientIdentifier } from "@/lib/rate-limit";
-
-// Generate time slots between start and end times
-function generateTimeSlots(start: string, end: string, duration: number = 30) {
-  const slots = [];
-  let currentTime = new Date(`1970-01-01T${start}`);
-  const endTime = new Date(`1970-01-01T${end}`);
-
-  while (currentTime < endTime) {
-    slots.push(format(currentTime, "HH:mm"));
-    currentTime = new Date(currentTime.getTime() + duration * 60000);
-  }
-
-  return slots;
-}
-
-// Check if a time slot is blocked by an existing appointment
-function isSlotBlockedByAppointment(
-  slotTime: string,
-  appointment: { time: string; duration: number },
-  slotDuration: number,
-): boolean {
-  // Parse slot start time
-  const slotStart = parse(slotTime, "HH:mm", new Date());
-
-  // Parse appointment start time
-  const appointmentStart = parse(appointment.time, "HH:mm", new Date());
-
-  // Calculate appointment end time
-  const appointmentEnd = addMinutes(appointmentStart, appointment.duration);
-
-  // Calculate slot end time
-  const slotEnd = addMinutes(slotStart, slotDuration);
-
-  // Determine if the slot is blocked
-  const isBlocked =
-    (slotStart >= appointmentStart && slotStart < appointmentEnd) ||
-    (slotEnd > appointmentStart && slotEnd <= appointmentEnd) ||
-    (slotStart <= appointmentStart && slotEnd >= appointmentEnd);
-
-  return isBlocked;
-}
+import {
+  getDayOfWeek,
+  generateTimeSlots,
+  isSlotBlocked,
+} from "@/lib/dates";
 
 export async function GET(request: Request) {
   // Apply rate limiting: 30 requests per minute
@@ -72,11 +40,12 @@ export async function GET(request: Request) {
       );
     }
 
-    // Format date for database query (YYYY-MM-DD)
-    const formattedDate = format(dateStr, "yyyy-MM-dd");
+    // Parse date using Argentina timezone utilities
+    const formattedDate = dateStr; // Already in YYYY-MM-DD format
+    const dayOfWeek = getDayOfWeek(dateStr); // 0 = Sunday, 1 = Monday, etc.
 
-    // Fetch barber's default schedule for the day
-    const defaultSchedule = await db
+    // First check for schedule overrides (one-off exceptions like days off)
+    const overrides = await db
       .select()
       .from(scheduleOverrides)
       .where(
@@ -86,29 +55,49 @@ export async function GET(request: Request) {
         ),
       );
 
-    let isWorkingDay = true;
-    let workingHours = { start: "09:00", end: "17:00" }; // Default hours
+    let isWorkingDay = false;
+    let timeSlotRanges: { start: string; end: string }[] = [];
 
-    if (defaultSchedule.length > 0) {
-      const override = defaultSchedule[0];
+    if (overrides.length > 0) {
+      // Use the override for this specific date
+      const override = overrides[0];
       isWorkingDay = override.isWorkingDay;
-      if (
-        isWorkingDay &&
-        override.availableSlots &&
-        override.availableSlots.length > 0
-      ) {
-        workingHours = {
-          start: override.availableSlots[0].start,
-          end: override.availableSlots[0].end,
-        };
+      if (isWorkingDay && override.availableSlots && override.availableSlots.length > 0) {
+        timeSlotRanges = override.availableSlots;
       }
     } else {
-      // If no override, fetch from barbers table
-      // (Implement fetching from barbers table if needed)
+      // No override - fetch the regular weekly schedule from workingHours table
+      const [regularSchedule] = await db
+        .select()
+        .from(workingHours)
+        .where(
+          and(
+            eq(workingHours.barberId, parseInt(barberId)),
+            eq(workingHours.dayOfWeek, dayOfWeek),
+          ),
+        );
+
+      if (regularSchedule) {
+        isWorkingDay = regularSchedule.isWorking;
+        if (isWorkingDay) {
+          // Prefer availableSlots JSONB if present, otherwise use startTime/endTime
+          const slots = regularSchedule.availableSlots as
+            | { start: string; end: string }[]
+            | null;
+          if (slots && slots.length > 0) {
+            timeSlotRanges = slots;
+          } else {
+            timeSlotRanges = [
+              { start: regularSchedule.startTime, end: regularSchedule.endTime },
+            ];
+          }
+        }
+      }
+      // If no schedule record exists, isWorkingDay remains false (no availability)
     }
 
-    if (!isWorkingDay) {
-      // If it's not a working day, return empty array
+    if (!isWorkingDay || timeSlotRanges.length === 0) {
+      // Not a working day or no time slots defined
       return NextResponse.json([]);
     }
 
@@ -122,12 +111,13 @@ export async function GET(request: Request) {
       serviceDuration = service.durationMinutes;
     }
 
-    // Generate all possible time slots based on working hours and service duration
-    const timeSlots = generateTimeSlots(
-      workingHours.start,
-      workingHours.end,
-      serviceDuration,
-    );
+    // Generate all possible time slots based on all working time ranges
+    // This supports split shifts (e.g., 9am-12pm and 2pm-6pm)
+    const timeSlots: string[] = [];
+    for (const range of timeSlotRanges) {
+      const slotsForRange = generateTimeSlots(range.start, range.end, serviceDuration);
+      timeSlots.push(...slotsForRange);
+    }
 
     // Get existing appointments with their service durations
     const existingAppointments = await db
@@ -144,7 +134,7 @@ export async function GET(request: Request) {
 
     // Map slots to include availability
     const slotsWithAvailability = timeSlots.map((time) => {
-      const isBlocked = existingAppointments.some((apt) => {
+      const blocked = existingAppointments.some((apt) => {
         // Only check appointments for the same barber
         if (apt.barberId !== parseInt(barberId)) {
           return false;
@@ -157,17 +147,10 @@ export async function GET(request: Request) {
           return false;
         }
 
-        return isSlotBlockedByAppointment(
-          time,
-          {
-            time: appointmentTime,
-            duration: serviceDuration,
-          },
-          serviceDuration,
-        );
+        return isSlotBlocked(time, serviceDuration, appointmentTime, serviceDuration);
       });
 
-      return { time, available: !isBlocked };
+      return { time, available: !blocked };
     });
 
     return NextResponse.json(slotsWithAvailability);

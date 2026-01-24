@@ -6,7 +6,7 @@ import { and } from "drizzle-orm";
 
 import { db } from "@/drizzle";
 import { appointments } from "@/drizzle/schema";
-import { addDays, startOfWeek } from "date-fns";
+import { addDays, startOfWeek, today, formatDateISO } from "@/lib/dates";
 
 interface Appointment {
   id: number;
@@ -26,12 +26,13 @@ interface DaySchedule {
 export async function getWeeklySchedule(
   employeeId: number,
 ): Promise<DaySchedule[]> {
-  const today = new Date();
-  // If it's Sunday, we want to start from tomorrow (Monday)
+  const todayDate = today();
+  // If it's Sunday (day 0), start from tomorrow (Monday)
+  // Otherwise start from the beginning of the week (Monday)
   const weekStart =
-    today.getDay() === 0
-      ? addDays(today, 1)
-      : startOfWeek(today, { weekStartsOn: 1 });
+    todayDate.getDay() === 0
+      ? addDays(todayDate, 1)
+      : startOfWeek(todayDate);
   const weekEnd = addDays(weekStart, 6);
 
   // Fetch appointments for the employee within the week
@@ -43,8 +44,8 @@ export async function getWeeklySchedule(
         eq(appointments.barberId, employeeId),
         between(
           appointments.date,
-          weekStart.toISOString(),
-          weekEnd.toISOString(),
+          formatDateISO(weekStart),
+          formatDateISO(weekEnd),
         ),
       ),
     );
@@ -71,13 +72,13 @@ export async function getWeeklySchedule(
   // Generate the week's schedule
   const schedule: DaySchedule[] = Array.from({ length: 6 }).map((_, index) => {
     const date = addDays(weekStart, index);
-    const dateKey = date.toISOString().split("T")[0];
+    const dateKey = formatDateISO(date);
     const appointmentsForDay = scheduleMap[dateKey] || [];
     const totalSlots = 8; // Define total slots per day
     const availableSlots = totalSlots - appointmentsForDay.length;
 
     return {
-      date: date.toISOString(),
+      date: formatDateISO(date),
       appointments: appointmentsForDay,
       availableSlots,
       totalSlots,

@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useState } from "react";
-import { format, startOfWeek, addDays } from "date-fns";
+import { formatDate, formatTime, getWeekDays, toArgentinaDate } from "@/lib/dates";
 import { TableSkeleton } from "@/app/(dashboard)/dashboard/_components/skeleton";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
@@ -43,15 +43,7 @@ export function RecentBookings() {
   });
 
   // Generate week days for the select dropdown
-  const today = new Date();
-  const weekStart = startOfWeek(today);
-  const weekDays = Array.from({ length: 7 }, (_, i) => {
-    const date = addDays(weekStart, i);
-    return {
-      value: format(date, "yyyy-MM-dd"),
-      label: format(date, "EEEE, MMM d"),
-    };
-  });
+  const weekDays = getWeekDays();
 
   const filteredBookings =
     bookings?.appointments
@@ -143,12 +135,12 @@ export function RecentBookings() {
                     <TableCell>{booking.barberName}</TableCell>
                     <TableCell>
                       {booking.appointmentAt
-                        ? format(new Date(booking.appointmentAt), "MMM d, yyyy")
+                        ? formatDate(toArgentinaDate(new Date(booking.appointmentAt)), "medium")
                         : "N/A"}
                     </TableCell>
                     <TableCell>
                       {booking.appointmentAt
-                        ? format(new Date(booking.appointmentAt), "h:mm a")
+                        ? formatTime(toArgentinaDate(new Date(booking.appointmentAt)))
                         : "N/A"}
                     </TableCell>
                     <TableCell className="text-sm">

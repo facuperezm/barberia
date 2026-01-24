@@ -211,6 +211,10 @@ export const workingHours = pgTable(
     dayOfWeek: integer("day_of_week").notNull(), // 0 = Sunday, 1 = Monday, … 6 = Saturday
     startTime: time("start_time").notNull(),
     endTime: time("end_time").notNull(),
+    // JSONB for multiple time slots (e.g., split shifts: 9am-12pm, 2pm-6pm)
+    // When present, this is the source of truth; startTime/endTime kept for backwards compatibility
+    availableSlots:
+      jsonb("available_slots").$type<{ start: string; end: string }[]>(),
     isWorking: boolean("is_working").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()

@@ -112,17 +112,30 @@ export function EmployeeSchedule() {
           const scheduleMap: WorkingHours = createDefaultSchedule();
 
           for (const entry of schedule) {
+            // Prefer availableSlots (JSONB) if present, fallback to startTime/endTime
+            const slots = entry.availableSlots as
+              | { start: string; end: string }[]
+              | null;
+            const timeSlots =
+              entry.isWorking && slots && slots.length > 0
+                ? slots.map((slot) => ({
+                    start: slot.start,
+                    end: slot.end,
+                    id: crypto.randomUUID(),
+                  }))
+                : entry.isWorking
+                  ? [
+                      {
+                        start: entry.startTime,
+                        end: entry.endTime,
+                        id: crypto.randomUUID(),
+                      },
+                    ]
+                  : [];
+
             scheduleMap[entry.dayOfWeek] = {
               isWorking: entry.isWorking,
-              timeSlots: entry.isWorking
-                ? [
-                    {
-                      start: entry.startTime,
-                      end: entry.endTime,
-                      id: crypto.randomUUID(),
-                    },
-                  ]
-                : [],
+              timeSlots,
             };
           }
 

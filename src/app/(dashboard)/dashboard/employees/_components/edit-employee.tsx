@@ -13,12 +13,15 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { type Barber } from "@/drizzle/schema";
+import { updateBarber } from "@/server/actions/barbers";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 interface EditEmployeeDialogProps {
   employee: Barber | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (employee: Barber) => void;
+  onSave?: (employee: Barber) => void;
 }
 
 export function EditEmployeeDialog({
@@ -33,6 +36,7 @@ export function EditEmployeeDialog({
     phone: "",
     imageUrl: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (employee) {
@@ -45,17 +49,33 @@ export function EditEmployeeDialog({
     }
   }, [employee]);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!employee) return;
 
-    onSave({
-      ...employee,
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone || null,
-      imageUrl: formData.imageUrl || null,
-      updatedAt: new Date(),
-    });
+    setIsSubmitting(true);
+    try {
+      const result = await updateBarber({
+        id: employee.id,
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || null,
+        imageUrl: formData.imageUrl || null,
+      });
+
+      if (result.success) {
+        toast.success("Employee updated successfully");
+        onOpenChange(false);
+        if (onSave && result.barber) {
+          onSave(result.barber);
+        }
+      } else {
+        toast.error(result.error || "Failed to update employee");
+      }
+    } catch {
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!employee) return null;
@@ -76,6 +96,7 @@ export function EditEmployeeDialog({
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
               }
+              disabled={isSubmitting}
             />
           </div>
           <div className="grid gap-2">
@@ -87,6 +108,7 @@ export function EditEmployeeDialog({
               onChange={(e) =>
                 setFormData({ ...formData, email: e.target.value })
               }
+              disabled={isSubmitting}
             />
           </div>
           <div className="grid gap-2">
@@ -98,6 +120,7 @@ export function EditEmployeeDialog({
               onChange={(e) =>
                 setFormData({ ...formData, phone: e.target.value })
               }
+              disabled={isSubmitting}
             />
           </div>
           <div className="grid gap-2">
@@ -109,14 +132,28 @@ export function EditEmployeeDialog({
               onChange={(e) =>
                 setFormData({ ...formData, imageUrl: e.target.value })
               }
+              disabled={isSubmitting}
             />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isSubmitting}
+          >
             Cancel
           </Button>
-          <Button onClick={handleSubmit}>Save Changes</Button>
+          <Button onClick={handleSubmit} disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 size-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Save Changes"
+            )}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

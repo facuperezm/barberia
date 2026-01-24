@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
+import { formatDate } from "@/lib/dates";
 import { Calendar, Clock, User } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
@@ -122,7 +122,7 @@ export function EmployeeSchedule() {
                     <div className="flex items-center gap-2">
                       <Calendar className="size-4 text-muted-foreground" />
                       <span className="font-medium">
-                        {format(new Date(day.date), "EEEE, MMM d")}
+                        {formatDate(day.date, "full")}
                       </span>
                     </div>
                     <Badge variant="secondary">

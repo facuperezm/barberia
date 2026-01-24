@@ -16,6 +16,12 @@ const barberSchema = z.object({
   imageUrl: z.string().url("Invalid URL format.").optional(),
 });
 
+const updateBarberSchema = barberSchema.extend({
+  id: z.number().positive("Invalid barber ID."),
+  bio: z.string().optional(),
+  isActive: z.boolean().optional(),
+});
+
 interface ActionResponse {
   success: boolean;
   barber?: Barber;
@@ -109,6 +115,69 @@ export async function addBarber(state: unknown, formData: FormData) {
   }
 }
 
+export async function updateBarber(data: {
+  id: number;
+  name: string;
+  email: string;
+  phone?: string | null;
+  imageUrl?: string | null;
+  bio?: string | null;
+  isActive?: boolean;
+}): Promise<ActionResponse> {
+  const { userId } = await auth();
+
+  if (!userId) {
+    return { success: false, error: "Unauthorized access." };
+  }
+
+  const inputValidation = updateBarberSchema.safeParse({
+    id: data.id,
+    name: data.name,
+    email: data.email,
+    phone: data.phone || undefined,
+    imageUrl: data.imageUrl || undefined,
+    bio: data.bio || undefined,
+    isActive: data.isActive,
+  });
+
+  if (!inputValidation.success) {
+    const { fieldErrors } = inputValidation.error.flatten();
+    return { success: false, errors: fieldErrors };
+  }
+
+  const { id, name, email, phone, imageUrl, bio, isActive } =
+    inputValidation.data;
+
+  try {
+    const salonId = await getCurrentSalonId();
+
+    const [updatedBarber] = await db
+      .update(barbers)
+      .set({
+        name,
+        email,
+        phone: phone ?? null,
+        imageUrl: imageUrl ?? null,
+        bio: bio ?? null,
+        isActive: isActive ?? true,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(barbers.id, id), eq(barbers.salonId, salonId)))
+      .returning();
+
+    if (!updatedBarber) {
+      return { success: false, error: "Barber not found or access denied." };
+    }
+
+    revalidatePath("/dashboard/barbers");
+    revalidatePath("/dashboard/employees");
+    revalidatePath("/dashboard/team");
+    return { success: true, barber: updatedBarber };
+  } catch {
+    return { success: false, error: "Failed to update barber." };
+  }
+}
+
 export async function getBarbers(): Promise<Barber[]> {
   try {
     const salonId = await getCurrentSalonId();
@@ -185,19 +254,21 @@ export async function updateBarberSchedule(
   >,
 ) {
   const valuesToInsert = Object.entries(schedule).map(
-    ([dayOfWeek, daySchedule]) => ({
-      barberId,
-      dayOfWeek: Number(dayOfWeek),
-      isWorking: daySchedule.isWorking,
-      startTime:
-        daySchedule.isWorking && daySchedule.slots.length > 0
-          ? daySchedule.slots[0].start
-          : "09:00",
-      endTime:
-        daySchedule.isWorking && daySchedule.slots.length > 0
-          ? daySchedule.slots[0].end
-          : "17:00",
-    }),
+    ([dayOfWeek, daySchedule]) => {
+      const slots = daySchedule.slots;
+      const hasSlots = daySchedule.isWorking && slots.length > 0;
+
+      return {
+        barberId,
+        dayOfWeek: Number(dayOfWeek),
+        isWorking: daySchedule.isWorking,
+        // Primary slot for backwards compatibility
+        startTime: hasSlots ? slots[0].start : "09:00",
+        endTime: hasSlots ? slots[0].end : "17:00",
+        // All slots stored in JSONB for full fidelity
+        availableSlots: hasSlots ? slots : null,
+      };
+    },
   );
 
   if (valuesToInsert.length === 0) {
@@ -210,5 +281,6 @@ export async function updateBarberSchedule(
   });
 
   revalidatePath("/dashboard/employees");
+  revalidatePath("/dashboard/team");
   return { success: true };
 }

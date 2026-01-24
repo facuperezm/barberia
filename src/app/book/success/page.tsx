@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CalendarCheck, Mail, ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { format } from "date-fns";
+import { formatDate, formatTime, toArgentinaDate } from "@/lib/dates";
 import { Suspense, useEffect, useState } from "react";
 import { getPublicAppointmentById } from "@/server/actions/appointments";
 
@@ -89,11 +89,11 @@ function BookingDetails() {
   }
 
   const formattedDate = appointment.appointmentAt
-    ? format(new Date(appointment.appointmentAt), "EEEE, MMMM d, yyyy")
+    ? formatDate(toArgentinaDate(new Date(appointment.appointmentAt)), "full")
     : "";
 
   const formattedTime = appointment.appointmentAt
-    ? format(new Date(appointment.appointmentAt), "h:mm a")
+    ? formatTime(toArgentinaDate(new Date(appointment.appointmentAt)))
     : "";
 
   return (
