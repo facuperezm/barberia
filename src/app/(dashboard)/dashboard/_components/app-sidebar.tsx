@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, Home, Scissors, Users, UserSquare } from "lucide-react";
+import { Calendar, Home, Scissors, Users } from "lucide-react";
 import { usePathname } from "next/navigation";
 import {
   Sidebar,
@@ -24,6 +24,11 @@ const items = [
     icon: Home,
   },
   {
+    title: "Team",
+    url: "/dashboard/team",
+    icon: Users,
+  },
+  {
     title: "Schedule",
     url: "/dashboard/schedule",
     icon: Calendar,
@@ -32,16 +37,6 @@ const items = [
     title: "Services",
     url: "/dashboard/services",
     icon: Scissors,
-  },
-  {
-    title: "Barbers",
-    url: "/dashboard/barbers",
-    icon: Users,
-  },
-  {
-    title: "Employees",
-    url: "/dashboard/employees",
-    icon: UserSquare,
   },
 ];
 

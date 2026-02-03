@@ -1,0 +1,1 @@
+ALTER TABLE "working_hours" ADD COLUMN "available_slots" jsonb;

@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { formatDateISO } from "@/lib/dates";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { saveScheduleOverride } from "@/server/actions/schedule-overrides";
 import { getBarbers } from "@/server/actions/barbers";
@@ -72,7 +72,7 @@ export function ScheduleOverrides() {
     try {
       await saveOverride({
         barberId: selectedBarber,
-        date: format(selectedDate, "yyyy-MM-dd"),
+        date: formatDateISO(selectedDate),
         isWorkingDay,
         availableSlots: timeSlots.map((slot) => `${slot.start}-${slot.end}`),
         reason,

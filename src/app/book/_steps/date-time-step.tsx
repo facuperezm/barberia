@@ -5,7 +5,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useMemo } from "react";
-import { format } from "date-fns";
+import { formatDateISO } from "@/lib/dates";
 import { useQuery } from "@tanstack/react-query";
 
 interface TimeSlot {
@@ -33,7 +33,7 @@ export function DateTimeStep() {
   const { state, setState } = useBooking();
 
   const formattedDate = useMemo(() => {
-    return state.date ? format(state.date, "yyyy-MM-dd") : "";
+    return state.date ? formatDateISO(state.date) : "";
   }, [state.date]);
 
   const { data: availableSlots = [], isLoading } = useQuery<TimeSlot[], Error>({
