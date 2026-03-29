@@ -1,6 +1,6 @@
 # Barbershop Management Application
 
-![Barbershop](./screenshot.jpg)
+![Barbershop](./screenshot.webp)
 
 **Live Demo:** [Barbershop App](https://barbershop.facupm.dev/)
 
