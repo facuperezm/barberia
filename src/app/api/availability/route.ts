@@ -6,7 +6,7 @@ import {
   services,
   workingHours,
 } from "@/drizzle/schema";
-import { and, eq } from "drizzle-orm";
+import { and, eq, notInArray } from "drizzle-orm";
 import { rateLimit, getClientIdentifier } from "@/lib/rate-limit";
 import {
   getDayOfWeek,
@@ -119,35 +119,34 @@ export async function GET(request: Request) {
       timeSlots.push(...slotsForRange);
     }
 
-    // Get existing appointments with their service durations
+    // Existing non-cancelled appointments for this barber, with their real durations
     const existingAppointments = await db
       .select({
-        id: appointments.id,
-        appointmentAt: appointments.appointmentAt,
-        endTime: appointments.endTime,
-        date: appointments.date,
         time: appointments.time,
-        barberId: appointments.barberId,
+        durationMinutes: services.durationMinutes,
       })
       .from(appointments)
-      .where(eq(appointments.date, formattedDate));
+      .innerJoin(services, eq(appointments.serviceId, services.id))
+      .where(
+        and(
+          eq(appointments.date, formattedDate),
+          eq(appointments.barberId, parseInt(barberId)),
+          notInArray(appointments.status, ["cancelled", "no_show"]),
+        ),
+      );
 
     // Map slots to include availability
     const slotsWithAvailability = timeSlots.map((time) => {
       const blocked = existingAppointments.some((apt) => {
-        // Only check appointments for the same barber
-        if (apt.barberId !== parseInt(barberId)) {
+        if (!apt.time) {
           return false;
         }
-
-        // Strip seconds from appointment time if it exists
-        const appointmentTime = apt.time ? apt.time.slice(0, 5) : null; // 'HH:mm'
-
-        if (!appointmentTime) {
-          return false;
-        }
-
-        return isSlotBlocked(time, serviceDuration, appointmentTime, serviceDuration);
+        return isSlotBlocked(
+          time,
+          serviceDuration,
+          apt.time,
+          apt.durationMinutes,
+        );
       });
 
       return { time, available: !blocked };
