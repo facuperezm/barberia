@@ -9,4 +9,8 @@ describe("normalizeTime", () => {
   it("passes through HH:mm", () => {
     expect(normalizeTime("14:00")).toBe("14:00");
   });
+
+  it("pads single-digit hours", () => {
+    expect(normalizeTime("9:00")).toBe("09:00");
+  });
 });
