@@ -183,30 +183,6 @@ export async function createAppointment(
 }
 
 /**
- * Legacy wrapper for FormData-based appointment creation
- */
-export async function createAppointmentFromFormData(
-  formData: FormData,
-): Promise<ActionResponse> {
-  const date = formData.get("date") as string;
-  const time = formData.get("time") as string;
-
-  const appointmentAt = new Date(`${date}T${time}`);
-
-  const data = {
-    barberId: parseInt(formData.get("barberId") as string),
-    serviceId: parseInt(formData.get("serviceId") as string),
-    customerName: formData.get("customerName") as string,
-    customerEmail: formData.get("customerEmail") as string,
-    customerPhone: formData.get("customerPhone") as string,
-    appointmentAt,
-    notes: formData.get("notes") as string,
-  };
-
-  return createAppointment(data);
-}
-
-/**
  * Retrieves all appointments for current salon with related data
  */
 export async function getAppointments() {
