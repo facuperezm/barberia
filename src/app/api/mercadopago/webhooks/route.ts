@@ -1,199 +1,221 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { MercadoPagoConfig, Payment } from "mercadopago";
 import { db } from "@/drizzle";
-import { payments, appointments } from "@/drizzle/schema";
+import { payments, appointments, barbers, services } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 import { env } from "@/env";
-import crypto from "crypto";
+import { verifyMercadoPagoSignature } from "@/server/payments/webhook-signature";
+import { sendAppointmentConfirmation } from "@/lib/email";
+import { formatTime, toArgentinaDate } from "@/lib/dates";
+import { logger } from "@/lib/logger";
 
-// Initialize MercadoPago client
-const client = new MercadoPagoConfig({
-  accessToken: env.MERCADOPAGO_ACCESS_TOKEN,
-});
+let client: MercadoPagoConfig | undefined;
 
-// Webhook signature validation (if secret is configured)
-function validateWebhookSignature(
-  body: string,
-  signature: string,
-  secret: string
-): boolean {
-  if (!secret) return true; // Skip validation if no secret configured
-  
-  const parts = signature.split(',');
-  let ts: string | null = null;
-  let v1: string | null = null;
-
-  parts.forEach(part => {
-    const [key, value] = part.split('=');
-    if (key?.trim() === 'ts') ts = value?.trim() || null;
-    if (key?.trim() === 'v1') v1 = value?.trim() || null;
+function getClient(): MercadoPagoConfig {
+  client ??= new MercadoPagoConfig({
+    accessToken: env.MERCADOPAGO_ACCESS_TOKEN,
   });
-
-  if (!ts || !v1) return false;
-
-  // Create the manifest for validation
-  const manifest = `ts:${ts};`;
-  const expectedSignature = crypto
-    .createHmac('sha256', secret)
-    .update(manifest + body)
-    .digest('hex');
-
-  return expectedSignature === v1;
+  return client;
 }
 
 export async function POST(request: NextRequest) {
+  const body = await request.text();
+
+  // MP sends data.id as a query param; fall back to the body
+  let parsedBody: { type?: string; data?: { id?: string | number } } = {};
   try {
-    const body = await request.text();
-    const data = JSON.parse(body);
+    parsedBody = JSON.parse(body);
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
 
-    // Validate webhook signature if secret is configured
-    const signature = request.headers.get('x-signature');
-    if (env.MERCADOPAGO_WEBHOOK_SECRET && signature) {
-      const isValid = validateWebhookSignature(
-        body,
-        signature,
-        env.MERCADOPAGO_WEBHOOK_SECRET
-      );
-      
-      if (!isValid) {
-        console.error('Invalid webhook signature');
-        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
-      }
-    }
+  const dataId =
+    request.nextUrl.searchParams.get("data.id") ??
+    (parsedBody.data?.id != null ? String(parsedBody.data.id) : null);
 
-    // Handle different webhook types
-    if (data.type === 'payment') {
-      await handlePaymentNotification(data.data.id);
-    }
+  const isValid = verifyMercadoPagoSignature({
+    signatureHeader: request.headers.get("x-signature"),
+    requestId: request.headers.get("x-request-id"),
+    dataId,
+    secret: env.MERCADOPAGO_WEBHOOK_SECRET,
+  });
 
-    // Return 200 to acknowledge receipt
+  if (!isValid) {
+    logger.warn("Rejected webhook with invalid signature", { dataId });
+    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+  }
+
+  if (parsedBody.type !== "payment" || !dataId) {
+    // Not a payment event — acknowledge and ignore
     return NextResponse.json({ received: true });
+  }
 
+  try {
+    await handlePaymentNotification(dataId);
+    return NextResponse.json({ received: true });
   } catch (error) {
-    console.error('Webhook processing error:', error);
-    return NextResponse.json(
-      { error: 'Webhook processing failed' },
-      { status: 500 }
-    );
+    // Return 500 so MercadoPago retries the notification
+    logger.error("Webhook processing failed", error as Error, {
+      paymentId: dataId,
+    });
+    return NextResponse.json({ error: "Processing failed" }, { status: 500 });
   }
 }
 
 async function handlePaymentNotification(paymentId: string) {
-  try {
-    // Fetch payment details from MercadoPago
-    const payment = new Payment(client);
-    const paymentData = await payment.get({ id: paymentId });
+  const payment = new Payment(getClient());
+  const paymentData = await payment.get({ id: paymentId });
 
-    if (!paymentData) {
-      console.error(`Payment ${paymentId} not found`);
+  if (!paymentData) {
+    throw new Error(`Payment ${paymentId} not found in MercadoPago`);
+  }
+
+  const externalReference = paymentData.external_reference;
+  if (!externalReference || !externalReference.startsWith("appointment-")) {
+    logger.warn("Webhook payment with unknown external reference", {
+      paymentId,
+      externalReference,
+    });
+    return;
+  }
+
+  const appointmentId = parseInt(externalReference.replace("appointment-", ""));
+
+  const [appointmentRow] = await db
+    .select({
+      id: appointments.id,
+      status: appointments.status,
+      appointmentAt: appointments.appointmentAt,
+      customerName: appointments.customerName,
+      customerEmail: appointments.customerEmail,
+      servicePriceCents: services.priceCents,
+      serviceName: services.name,
+      barberName: barbers.name,
+    })
+    .from(appointments)
+    .innerJoin(services, eq(appointments.serviceId, services.id))
+    .innerJoin(barbers, eq(appointments.barberId, barbers.id))
+    .where(eq(appointments.id, appointmentId))
+    .limit(1);
+
+  if (!appointmentRow) {
+    logger.warn("Webhook for unknown appointment", { paymentId, appointmentId });
+    return;
+  }
+
+  const paymentStatus = mapMercadoPagoStatus(paymentData.status);
+  const amountCents = Math.round((paymentData.transaction_amount || 0) * 100);
+
+  // Upsert the payment record
+  const [existingPayment] = await db
+    .select({ id: payments.id })
+    .from(payments)
+    .where(eq(payments.mercadopagoPaymentId, paymentId))
+    .limit(1);
+
+  const paymentFields = {
+    status: paymentStatus,
+    mercadopagoPaymentMethodId: paymentData.payment_method_id ?? null,
+    mercadopagoPaymentType: paymentData.payment_type_id ?? null,
+    mercadopagoInstallments: paymentData.installments ?? null,
+    mercadopagoCardLastFourDigits: paymentData.card?.last_four_digits ?? null,
+    mercadopagoPayerEmail: paymentData.payer?.email ?? null,
+    mercadopagoProcessingMode: paymentData.processing_mode ?? null,
+    mercadopagoOperationType: paymentData.operation_type ?? null,
+    mercadopagoTransactionDetails: paymentData.transaction_details ?? null,
+    mercadopagoStatusDetail: paymentData.status_detail ?? null,
+    mercadopagoFailureReason:
+      paymentData.status === "rejected"
+        ? paymentData.status_detail ?? null
+        : null,
+    updatedAt: new Date(),
+  };
+
+  if (existingPayment) {
+    await db
+      .update(payments)
+      .set(paymentFields)
+      .where(eq(payments.id, existingPayment.id));
+  } else {
+    await db.insert(payments).values({
+      appointmentId,
+      amountCents,
+      method: "mercadopago",
+      mercadopagoPaymentId: paymentId,
+      mercadopagoPreferenceId: paymentData.order?.id?.toString() ?? null,
+      mercadopagoExternalReference: externalReference,
+      ...paymentFields,
+    });
+  }
+
+  if (paymentStatus === "succeeded") {
+    // Verify the paid amount covers the service price before confirming
+    if (amountCents < appointmentRow.servicePriceCents) {
+      logger.error(
+        "Payment amount mismatch — not confirming appointment",
+        undefined,
+        {
+          paymentId,
+          appointmentId,
+          amountCents,
+          expected: appointmentRow.servicePriceCents,
+        },
+      );
       return;
     }
 
-    // Extract appointment ID from external reference
-    const externalReference = paymentData.external_reference;
-    if (!externalReference || !externalReference.startsWith('appointment-')) {
-      console.error(`Invalid external reference: ${externalReference}`);
-      return;
+    const wasAlreadyConfirmed = appointmentRow.status === "confirmed";
+
+    await db
+      .update(appointments)
+      .set({ status: "confirmed", updatedAt: new Date() })
+      .where(eq(appointments.id, appointmentId));
+
+    if (
+      !wasAlreadyConfirmed &&
+      appointmentRow.customerEmail &&
+      appointmentRow.appointmentAt
+    ) {
+      try {
+        await sendAppointmentConfirmation({
+          customerName: appointmentRow.customerName ?? "Cliente",
+          customerEmail: appointmentRow.customerEmail,
+          date: appointmentRow.appointmentAt,
+          time: formatTime(toArgentinaDate(appointmentRow.appointmentAt)),
+          service: appointmentRow.serviceName,
+          barberName: appointmentRow.barberName,
+        });
+      } catch (error) {
+        // Don't fail the webhook over email — payment is already recorded
+        logger.error("Failed to send confirmation email", error as Error, {
+          appointmentId,
+        });
+      }
     }
-
-    const appointmentId = parseInt(externalReference.replace('appointment-', ''));
-
-    // Check if payment record already exists
-    const existingPayment = await db
-      .select()
-      .from(payments)
-      .where(eq(payments.mercadopagoPaymentId, paymentId))
-      .limit(1);
-
-    const paymentStatus = mapMercadoPagoStatus(paymentData.status);
-    const amountCents = Math.round((paymentData.transaction_amount || 0) * 100);
-
-    if (existingPayment.length > 0) {
-      // Update existing payment
-      await db
-        .update(payments)
-        .set({
-          status: paymentStatus,
-          mercadopagoPaymentMethodId: paymentData.payment_method_id,
-          mercadopagoPaymentType: paymentData.payment_type_id,
-          mercadopagoInstallments: paymentData.installments,
-          mercadopagoCardLastFourDigits: paymentData.card?.last_four_digits,
-          mercadopagoPayerEmail: paymentData.payer?.email,
-          mercadopagoProcessingMode: paymentData.processing_mode,
-          mercadopagoOperationType: paymentData.operation_type,
-          mercadopagoTransactionDetails: paymentData.transaction_details,
-          mercadopagoStatusDetail: paymentData.status_detail,
-          mercadopagoFailureReason: paymentData.status === 'rejected' 
-            ? `${paymentData.status_detail} - ${paymentData.transaction_details?.verification_code}` 
-            : null,
-          updatedAt: new Date(),
-        })
-        .where(eq(payments.id, existingPayment[0]!.id));
-    } else {
-      // Create new payment record
-      await db.insert(payments).values({
-        appointmentId,
-        amountCents,
-        method: 'mercadopago',
-        status: paymentStatus,
-        mercadopagoPaymentId: paymentId,
-        mercadopagoPreferenceId: paymentData.order?.id?.toString() || null,
-        mercadopagoPaymentMethodId: paymentData.payment_method_id || null,
-        mercadopagoPaymentType: paymentData.payment_type_id || null,
-        mercadopagoInstallments: paymentData.installments || null,
-        mercadopagoCardLastFourDigits: paymentData.card?.last_four_digits || null,
-        mercadopagoPayerEmail: paymentData.payer?.email || null,
-        mercadopagoProcessingMode: paymentData.processing_mode || null,
-        mercadopagoOperationType: paymentData.operation_type || null,
-        mercadopagoExternalReference: externalReference,
-        mercadopagoTransactionDetails: paymentData.transaction_details || null,
-        mercadopagoStatusDetail: paymentData.status_detail || null,
-        mercadopagoFailureReason: paymentData.status === 'rejected' 
-          ? `${paymentData.status_detail} - ${paymentData.transaction_details?.verification_code}` 
-          : null,
-      });
-    }
-
-    // Update appointment status based on payment status
-    if (paymentStatus === 'succeeded') {
-      await db
-        .update(appointments)
-        .set({
-          status: 'confirmed',
-          updatedAt: new Date(),
-        })
-        .where(eq(appointments.id, appointmentId));
-    } else if (paymentStatus === 'failed') {
-      await db
-        .update(appointments)
-        .set({
-          status: 'cancelled',
-          updatedAt: new Date(),
-        })
-        .where(eq(appointments.id, appointmentId));
-    }
-
-    console.log(`Payment ${paymentId} processed successfully`);
-
-  } catch (error) {
-    console.error(`Error processing payment ${paymentId}:`, error);
+  } else if (paymentStatus === "failed") {
+    await db
+      .update(appointments)
+      .set({ status: "cancelled", updatedAt: new Date() })
+      .where(eq(appointments.id, appointmentId));
   }
 }
 
-function mapMercadoPagoStatus(status: string | undefined): 'pending' | 'processing' | 'succeeded' | 'failed' | 'refunded' {
+function mapMercadoPagoStatus(
+  status: string | undefined,
+): "pending" | "processing" | "succeeded" | "failed" | "refunded" {
   switch (status) {
-    case 'approved':
-      return 'succeeded';
-    case 'pending':
-    case 'in_process':
-      return 'processing';
-    case 'rejected':
-    case 'cancelled':
-      return 'failed';
-    case 'refunded':
-    case 'charged_back':
-      return 'refunded';
+    case "approved":
+      return "succeeded";
+    case "pending":
+    case "in_process":
+      return "processing";
+    case "rejected":
+    case "cancelled":
+      return "failed";
+    case "refunded":
+    case "charged_back":
+      return "refunded";
     default:
-      return 'pending';
+      return "pending";
   }
-} 
+}

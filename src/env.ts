@@ -8,7 +8,7 @@ export const env = createEnv({
     OWNER_EMAIL: z.string(),
     // MercadoPago Server Variables
     MERCADOPAGO_ACCESS_TOKEN: z.string(),
-    MERCADOPAGO_WEBHOOK_SECRET: z.string().optional(),
+    MERCADOPAGO_WEBHOOK_SECRET: z.string().min(1),
     // Email Server Variable (server-only for security)
     RESEND_API_KEY: z.string(),
   },
