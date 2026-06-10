@@ -31,11 +31,3 @@ export function CardSkeleton() {
     </div>
   );
 }
-
-export function ScheduleSkeleton() {
-  return (
-    <div className="space-y-4">
-      <Skeleton className="h-[600px] w-full rounded-lg" />
-    </div>
-  );
-}

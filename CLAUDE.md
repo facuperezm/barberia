@@ -26,13 +26,13 @@ pnpm tsx --env-file .env scripts/apply-booking-constraint.ts
 ## Architecture
 
 ### Tech Stack
-- **Framework**: Next.js 15 with App Router (React 19)
+- **Framework**: Next.js 16 with App Router (React 19)
 - **Database**: Neon PostgreSQL with Drizzle ORM
 - **Auth**: Clerk
 - **Payments**: MercadoPago
 - **Styling**: Tailwind CSS with shadcn/ui (Radix primitives)
 - **Data Fetching**: TanStack Query for client state, Server Components for server data
-- **Forms**: react-hook-form with Zod validation
+- **Forms**: native form actions with Zod validation in server actions (booking wizard manages its own state)
 - **Email**: Resend with React Email templates
 
 ### Project Structure

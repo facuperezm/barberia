@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { auth } from "@clerk/nextjs/server"; // Assuming you're using Clerk for authentication
+import { auth } from "@clerk/nextjs/server";
 import { db } from "@/drizzle";
 import { services } from "@/drizzle/schema";
 import { eq, and } from "drizzle-orm";
@@ -24,11 +24,10 @@ interface ActionResponse {
 
 /**
  * Updates the price of a service (requires authentication)
- * Returns ActionResponse for use with useActionState
  * @param formData - Form data containing serviceId and price
  * @returns Action response with success status
  */
-export async function updateServicePriceWithResponse(
+async function updateServicePriceWithResponse(
   formData: FormData,
 ): Promise<ActionResponse> {
   const { userId } = await auth();

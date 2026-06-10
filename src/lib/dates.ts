@@ -13,20 +13,19 @@ import {
   startOfWeek as dateFnsStartOfWeek,
   isBefore,
   isAfter,
-  startOfDay,
 } from "date-fns";
 import { es } from "date-fns/locale";
 
 // Argentina timezone
-export const ARGENTINA_TZ = "America/Argentina/Buenos_Aires";
+const ARGENTINA_TZ = "America/Argentina/Buenos_Aires";
 
 // Spanish (Argentina) locale for formatting
-export const LOCALE = es;
+const LOCALE = es;
 
 /**
  * Create a date in Argentina timezone from a date string (YYYY-MM-DD)
  */
-export function parseDate(dateStr: string): TZDate {
+function parseDate(dateStr: string): TZDate {
   const [year, month, day] = dateStr.split("-").map(Number);
   return new TZDate(year, month - 1, day, 12, 0, 0, ARGENTINA_TZ);
 }
@@ -142,38 +141,6 @@ export function normalizeTime(time: string): string {
 }
 
 /**
- * Format day name in Spanish
- */
-export function formatDayName(
-  dayIndex: number,
-  style: "long" | "short" = "long"
-): string {
-  // Create a date that falls on the correct day of week
-  // Jan 4, 2026 is a Sunday (day 0)
-  const baseDate = new TZDate(2026, 0, 4 + dayIndex, 12, 0, 0, ARGENTINA_TZ);
-  return dateFnsFormat(baseDate, style === "long" ? "EEEE" : "EEE", {
-    locale: LOCALE,
-  });
-}
-
-/**
- * Get day name from day index
- */
-export const DAY_NAMES = {
-  long: [
-    "domingo",
-    "lunes",
-    "martes",
-    "miércoles",
-    "jueves",
-    "viernes",
-    "sábado",
-  ],
-  short: ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"],
-  initial: ["D", "L", "M", "M", "J", "V", "S"],
-} as const;
-
-/**
  * Generate time slots between start and end times
  */
 export function generateTimeSlots(
@@ -224,28 +191,6 @@ export function isSlotBlocked(
   return (
     (isBefore(slotStart, aptEnd) && isAfter(slotEnd, aptStart)) ||
     slotStart.getTime() === aptStart.getTime()
-  );
-}
-
-/**
- * Check if a date is in the past (before today in Argentina)
- */
-export function isPastDate(date: TZDate | string): boolean {
-  const tzDate = typeof date === "string" ? parseDate(date) : date;
-  const todayStart = startOfDay(today());
-  return isBefore(tzDate, todayStart);
-}
-
-/**
- * Check if a date is today in Argentina timezone
- */
-export function isToday(date: TZDate | string): boolean {
-  const tzDate = typeof date === "string" ? parseDate(date) : date;
-  const todayDate = today();
-  return (
-    tzDate.getFullYear() === todayDate.getFullYear() &&
-    tzDate.getMonth() === todayDate.getMonth() &&
-    tzDate.getDate() === todayDate.getDate()
   );
 }
 

@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus } from "lucide-react";
 import { TimeSlotEditor, type TimeSlot } from "./time-slot-editor";
 
-export interface DaySchedule {
+interface DaySchedule {
   isWorking: boolean;
   timeSlots: TimeSlot[];
 }

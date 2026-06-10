@@ -67,11 +67,6 @@ export async function deleteBarberWithResponse(
   }
 }
 
-// Form action wrapper for React 19.2 compatibility (must return void)
-export async function deleteBarber(formData: FormData): Promise<void> {
-  await deleteBarberWithResponse(formData);
-}
-
 export async function addBarber(state: unknown, formData: FormData) {
   const { userId } = await auth();
 
