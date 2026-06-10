@@ -115,7 +115,10 @@ export function ScheduleDialog({
         };
       }
 
-      await updateBarberSchedule(member.id, scheduleData);
+      const result = await updateBarberSchedule(member.id, scheduleData);
+      if (!result.success) {
+        throw new Error(result.error ?? "Failed to save schedule");
+      }
       toast.success("Schedule updated successfully");
       onOpenChange(false);
     } catch {

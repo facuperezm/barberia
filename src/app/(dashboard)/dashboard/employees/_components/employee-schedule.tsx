@@ -232,7 +232,10 @@ export function EmployeeSchedule() {
         };
       }
 
-      await updateBarberSchedule(parseInt(selectedEmployee), scheduleData);
+      const result = await updateBarberSchedule(parseInt(selectedEmployee), scheduleData);
+      if (!result.success) {
+        throw new Error(result.error ?? "Failed to save schedule");
+      }
       toast.success("Schedule updated successfully");
     } catch (error) {
       console.error("Failed to save schedule:", error);

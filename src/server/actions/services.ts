@@ -5,7 +5,8 @@ import { z } from "zod";
 import { auth } from "@clerk/nextjs/server"; // Assuming you're using Clerk for authentication
 import { db } from "@/drizzle";
 import { services } from "@/drizzle/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
+import { getCurrentSalonId } from "@/lib/salon-context";
 
 // Define the schema for updating service price
 const updateServicePriceSchema = z.object({
@@ -49,14 +50,20 @@ export async function updateServicePriceWithResponse(
   }
 
   try {
+    const salonId = await getCurrentSalonId();
     const updated = await db
       .update(services)
       .set({ priceCents: Math.round(Number(parsed.data.price) * 100) })
-      .where(eq(services.id, Number(parsed.data.serviceId)))
+      .where(
+        and(
+          eq(services.id, Number(parsed.data.serviceId)),
+          eq(services.salonId, salonId),
+        ),
+      )
       .returning();
 
-    if (!updated) {
-      return { success: false, error: "Service not found." };
+    if (updated.length === 0) {
+      return { success: false, error: "Service not found or access denied." };
     }
 
     revalidatePath("/dashboard/services");

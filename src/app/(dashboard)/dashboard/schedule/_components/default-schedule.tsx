@@ -83,8 +83,12 @@ export function DefaultSchedule() {
   }, [barberSchedule]);
 
   const { mutate: saveSchedule } = useMutation({
-    mutationFn: async () =>
-      updateBarberSchedule(parseInt(selectedBarber), schedule),
+    mutationFn: async () => {
+      const result = await updateBarberSchedule(parseInt(selectedBarber), schedule);
+      if (!result.success) {
+        throw new Error(result.error ?? "Failed to save schedule");
+      }
+    },
     onSuccess: () => {
       toast.success("Schedule saved successfully");
     },
