@@ -1,37 +1,19 @@
-"use server";
-import { currentUser } from "@clerk/nextjs/server";
+import "server-only";
 import { db } from "@/drizzle";
 import { salons } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
-import { env } from "@/env";
+import { requireOwner } from "@/lib/auth";
 
 export async function getCurrentSalonId(): Promise<number> {
-  const user = await currentUser()
-  if (!user) {
-    throw new Error("Unauthorized: No user session found");
-  }
+  await requireOwner();
 
-  const userEmail = user.emailAddresses[0].emailAddress;
-  if (userEmail === env.OWNER_EMAIL) {
-    const [salon] = await db.select().from(salons).limit(1);
-    if (!salon) {
-      throw new Error("No salon found for owner");
-    }
-    return salon.id;
+  const [salon] = await db.select().from(salons).limit(1);
+  if (!salon) {
+    throw new Error("No salon configured");
   }
-
-
-  const [defaultSalon] = await db.select().from(salons).limit(1);
-  if (!defaultSalon) {
-    throw new Error("No default salon found");
-  }
-  
-  return defaultSalon.id;
+  return salon.id;
 }
 
-/**
- * Validate that a user has access to a specific salon
- */
 export async function validateSalonAccess(salonId: number): Promise<boolean> {
   try {
     const currentSalonId = await getCurrentSalonId();
@@ -41,9 +23,6 @@ export async function validateSalonAccess(salonId: number): Promise<boolean> {
   }
 }
 
-/**
- * Get salon context for the current user
- */
 export async function getSalonContext() {
   const salonId = await getCurrentSalonId();
   const [salon] = await db
@@ -56,8 +35,5 @@ export async function getSalonContext() {
     throw new Error(`Salon with ID ${salonId} not found`);
   }
 
-  return {
-    salonId,
-    salon,
-  };
+  return { salonId, salon };
 }

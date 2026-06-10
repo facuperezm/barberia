@@ -1,29 +1,10 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { env } from "./env";
 
-const isProtectedRoute = createRouteMatcher([
-  // "/api/appointments",
-  // "/api/barbers",
-  // "/api/services",
-  "/dashboard",
-]);
+const isProtectedRoute = createRouteMatcher(["/dashboard(.*)"]);
 
 export const proxy = clerkMiddleware(async (auth, req) => {
-  const { userId, sessionClaims, redirectToSignIn } = await auth();
-
-  // Redirect to sign-in if accessing protected route without authentication
-  if (!userId && isProtectedRoute(req)) {
-    return redirectToSignIn({ returnBackUrl: req.url });
-  }
-
-  // For dashboard routes, verify user is the owner
-  if (userId && req.nextUrl.pathname.startsWith("/dashboard")) {
-    const userEmail = sessionClaims?.email as string | undefined;
-
-    // If user email doesn't match owner email, deny access
-    if (!userEmail || userEmail !== env.OWNER_EMAIL) {
-      await auth.protect();
-    }
+  if (isProtectedRoute(req)) {
+    await auth.protect();
   }
 });
 
