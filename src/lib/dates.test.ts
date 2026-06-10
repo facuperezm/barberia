@@ -30,6 +30,11 @@ describe("parseDateTime", () => {
     const result = parseDateTime("2026-01-15", "09:00");
     expect(result.toISOString()).toBe("2026-01-15T12:00:00.000Z");
   });
+
+  it("crosses the day boundary correctly for late-night times", () => {
+    const result = parseDateTime("2026-06-10", "23:59");
+    expect(result.toISOString()).toBe("2026-06-11T02:59:00.000Z");
+  });
 });
 
 describe("generateTimeSlots", () => {
