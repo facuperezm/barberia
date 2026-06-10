@@ -32,6 +32,18 @@ export function parseDate(dateStr: string): TZDate {
 }
 
 /**
+ * Build the UTC instant for a YYYY-MM-DD date and HH:mm time interpreted
+ * as Argentina wall-clock time. Use this for storing appointment timestamps.
+ */
+export function parseDateTime(dateStr: string, timeStr: string): Date {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const [hours, minutes] = timeStr.split(":").map(Number);
+  return new Date(
+    new TZDate(year, month - 1, day, hours, minutes, 0, ARGENTINA_TZ).getTime(),
+  );
+}
+
+/**
  * Create a date in Argentina timezone from Date object or timestamp
  */
 export function toArgentinaDate(date: Date | number): TZDate {
