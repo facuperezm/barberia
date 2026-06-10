@@ -23,4 +23,5 @@ export const env = createEnv({
     NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY:
       process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY,
   },
+  skipValidation: !!process.env.SKIP_ENV_VALIDATION,
 });
