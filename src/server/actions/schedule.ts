@@ -7,6 +7,7 @@ import { and } from "drizzle-orm";
 import { db } from "@/drizzle";
 import { appointments } from "@/drizzle/schema";
 import { addDays, startOfWeek, today, formatDateISO } from "@/lib/dates";
+import { getCurrentSalonId } from "@/lib/salon-context";
 
 interface Appointment {
   id: number;
@@ -26,6 +27,7 @@ interface DaySchedule {
 export async function getWeeklySchedule(
   employeeId: number,
 ): Promise<DaySchedule[]> {
+  const salonId = await getCurrentSalonId();
   const todayDate = today();
   // If it's Sunday (day 0), start from tomorrow (Monday)
   // Otherwise start from the beginning of the week (Monday)
@@ -41,6 +43,7 @@ export async function getWeeklySchedule(
     .from(appointments)
     .where(
       and(
+        eq(appointments.salonId, salonId),
         eq(appointments.barberId, employeeId),
         between(
           appointments.date,

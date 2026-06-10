@@ -238,12 +238,22 @@ export async function getAllEmployees(): Promise<Barber[]> {
 }
 
 export async function getBarberSchedule(barberId: number) {
-  const result = await db
+  const salonId = await getCurrentSalonId();
+
+  const [barber] = await db
+    .select({ id: barbers.id })
+    .from(barbers)
+    .where(and(eq(barbers.id, barberId), eq(barbers.salonId, salonId)))
+    .limit(1);
+
+  if (!barber) {
+    return [];
+  }
+
+  return db
     .select()
     .from(workingHours)
     .where(eq(workingHours.barberId, barberId));
-
-  return result;
 }
 
 export async function updateBarberSchedule(
@@ -253,6 +263,18 @@ export async function updateBarberSchedule(
     { isWorking: boolean; slots: { start: string; end: string }[] }
   >,
 ) {
+  const salonId = await getCurrentSalonId();
+
+  const [barber] = await db
+    .select({ id: barbers.id })
+    .from(barbers)
+    .where(and(eq(barbers.id, barberId), eq(barbers.salonId, salonId)))
+    .limit(1);
+
+  if (!barber) {
+    return { success: false, error: "Barber not found or access denied" };
+  }
+
   const valuesToInsert = Object.entries(schedule).map(
     ([dayOfWeek, daySchedule]) => {
       const slots = daySchedule.slots;
