@@ -13,7 +13,9 @@ export async function isOwner(): Promise<boolean> {
 
   const ownerEmail = env.OWNER_EMAIL.toLowerCase();
   return user.emailAddresses.some(
-    (address) => address.emailAddress.toLowerCase() === ownerEmail,
+    (address) =>
+      address.emailAddress.toLowerCase() === ownerEmail &&
+      address.verification?.status === "verified",
   );
 }
 
