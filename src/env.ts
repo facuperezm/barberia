@@ -16,12 +16,14 @@ export const env = createEnv({
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string(),
     // MercadoPago Client Variables
     NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY: z.string(),
+    NEXT_PUBLIC_APP_URL: z.string().url(),
   },
   experimental__runtimeEnv: {
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
     NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY:
       process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY,
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   },
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,
 });
