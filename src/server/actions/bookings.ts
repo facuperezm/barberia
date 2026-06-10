@@ -177,7 +177,8 @@ export async function createBookingAction(
           customerId,
           appointmentAt: appointmentDateTime,
           endTime: endDateTime,
-          status: "pending",
+          // Paid bookings are confirmed by the payment webhook; free ones immediately
+          status: service.priceCents > 0 ? "pending" : "confirmed",
           // Legacy fields kept until the Phase 1 schema migration
           date: sanitizedDate,
           time: `${sanitizedTime}:00`,
@@ -189,6 +190,9 @@ export async function createBookingAction(
 
       return { appointment, service, barber };
     });
+
+    revalidatePath("/dashboard");
+    revalidatePath("/book");
 
     if (result.service.priceCents > 0) {
       const preference = await createPreferenceForAppointment(
@@ -230,9 +234,6 @@ export async function createBookingAction(
         appointmentId: result.appointment.id,
       });
     }
-
-    revalidatePath("/dashboard");
-    revalidatePath("/book");
 
     return { success: true, publicId: result.appointment.publicId };
   } catch (error) {
