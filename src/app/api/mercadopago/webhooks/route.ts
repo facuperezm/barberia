@@ -108,13 +108,22 @@ async function handlePaymentNotification(paymentId: string) {
 
   // Upsert the payment record
   const [existingPayment] = await db
-    .select({ id: payments.id })
+    .select({ id: payments.id, status: payments.status })
     .from(payments)
     .where(eq(payments.mercadopagoPaymentId, paymentId))
     .limit(1);
 
+  // Never let an out-of-order pending/processing notification downgrade a
+  // terminal payment status (succeeded/refunded)
+  const isDowngrade =
+    existingPayment &&
+    (existingPayment.status === "succeeded" ||
+      existingPayment.status === "refunded") &&
+    (paymentStatus === "pending" || paymentStatus === "processing");
+  const effectiveStatus = isDowngrade ? existingPayment.status : paymentStatus;
+
   const paymentFields = {
-    status: paymentStatus,
+    status: effectiveStatus,
     mercadopagoPaymentMethodId: paymentData.payment_method_id ?? null,
     mercadopagoPaymentType: paymentData.payment_type_id ?? null,
     mercadopagoInstallments: paymentData.installments ?? null,
@@ -148,6 +157,9 @@ async function handlePaymentNotification(paymentId: string) {
     });
   }
 
+  // TODO Phase 1: handle "refunded"/"charged_back" — currently only the payment
+  // record reflects the refund; the appointment stays confirmed and must be
+  // reconciled manually from the dashboard.
   if (paymentStatus === "succeeded") {
     // Verify the paid amount covers the service price before confirming
     if (amountCents < appointmentRow.servicePriceCents) {
@@ -192,7 +204,7 @@ async function handlePaymentNotification(paymentId: string) {
         });
       }
     }
-  } else if (paymentStatus === "failed") {
+  } else if (paymentStatus === "failed" && appointmentRow.status === "pending") {
     await db
       .update(appointments)
       .set({ status: "cancelled", updatedAt: new Date() })
