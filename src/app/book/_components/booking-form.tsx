@@ -104,7 +104,11 @@ export function BookingForm() {
         } else {
           // No payment required, redirect to success
           toast.success("Appointment booked successfully!");
-          router.push(`/book/success?appointment=${result.publicId}`);
+          router.push(
+            result.publicId
+              ? `/book/success?appointment=${result.publicId}`
+              : "/book/success",
+          );
         }
       } catch (error) {
         console.error("Booking error:", error);
