@@ -22,6 +22,7 @@ export type BookingInput = z.infer<typeof bookingSchema>;
 interface BookingResponse {
   success: boolean;
   appointmentId?: number;
+  publicId?: string;
   redirectUrl?: string;
   error?: string;
   errors?: Record<string, string[]>;
@@ -132,7 +133,7 @@ export async function createBookingAction(
           customerEmail: sanitizedCustomerEmail,
           customerPhone: sanitizedCustomerPhone,
         })
-        .returning({ id: appointments.id });
+        .returning({ id: appointments.id, publicId: appointments.publicId });
 
       return { appointment, service };
     });
@@ -155,6 +156,7 @@ export async function createBookingAction(
         return {
           success: true,
           appointmentId: result.appointment.id,
+          publicId: result.appointment.publicId,
           redirectUrl,
         };
       }
@@ -167,6 +169,7 @@ export async function createBookingAction(
     return {
       success: true,
       appointmentId: result.appointment.id,
+      publicId: result.appointment.publicId,
     };
   } catch (error) {
     return {

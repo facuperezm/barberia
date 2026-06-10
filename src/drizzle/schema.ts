@@ -12,6 +12,7 @@ import {
   index,
   uniqueIndex,
   check,
+  uuid,
 } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
 
@@ -286,6 +287,7 @@ export const appointments = pgTable(
   "appointments",
   {
     id: serial("id").primaryKey(),
+    publicId: uuid("public_id").notNull().defaultRandom(),
     salonId: integer("salon_id")
       .references(() => salons.id, { onDelete: "cascade" })
       .notNull(),
@@ -320,6 +322,7 @@ export const appointments = pgTable(
       .notNull(),
   },
   (table) => [
+    uniqueIndex("appointments_public_id_idx").on(table.publicId),
     index("appointments_salon_id_idx").on(table.salonId),
     index("appointments_barber_id_idx").on(table.barberId),
     index("appointments_customer_id_idx").on(table.customerId),

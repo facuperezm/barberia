@@ -223,34 +223,40 @@ export async function getAppointments() {
   }
 }
 
+const publicIdSchema = z.string().uuid();
+
 /**
- * Get appointment details by ID (public - for success page)
- * Returns limited info for display purposes
+ * Get appointment details by public UUID (for the booking success page).
+ * Uses the non-guessable publicId so appointment data can't be enumerated.
  */
-export async function getPublicAppointmentById(appointmentId: number) {
+export async function getPublicAppointmentByPublicId(publicId: string) {
+  const parsed = publicIdSchema.safeParse(publicId);
+  if (!parsed.success) {
+    return { success: false as const, error: "Appointment not found" };
+  }
+
   try {
     const [result] = await db
       .select({
-        id: appointments.id,
+        id: appointments.publicId,
         appointmentAt: appointments.appointmentAt,
         barberName: barbers.name,
         serviceName: services.name,
-        // Use legacy fields as fallback for customer info
         customerName: appointments.customerName,
       })
       .from(appointments)
       .innerJoin(barbers, eq(appointments.barberId, barbers.id))
       .innerJoin(services, eq(appointments.serviceId, services.id))
-      .where(eq(appointments.id, appointmentId))
+      .where(eq(appointments.publicId, parsed.data))
       .limit(1);
 
     if (!result) {
-      return { success: false, error: "Appointment not found" };
+      return { success: false as const, error: "Appointment not found" };
     }
 
-    return { success: true, appointment: result };
+    return { success: true as const, appointment: result };
   } catch {
-    return { success: false, error: "Failed to fetch appointment" };
+    return { success: false as const, error: "Failed to fetch appointment" };
   }
 }
 

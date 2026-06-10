@@ -7,10 +7,10 @@ import { CalendarCheck, Mail, ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { formatDate, formatTime, toArgentinaDate } from "@/lib/dates";
 import { Suspense, useEffect, useState } from "react";
-import { getPublicAppointmentById } from "@/server/actions/appointments";
+import { getPublicAppointmentByPublicId } from "@/server/actions/appointments";
 
 interface AppointmentDetails {
-  id: number;
+  id: string;
   appointmentAt: Date | null;
   barberName: string;
   serviceName: string;
@@ -52,7 +52,7 @@ function BookingDetails() {
         return;
       }
 
-      const result = await getPublicAppointmentById(parseInt(appointmentId));
+      const result = await getPublicAppointmentByPublicId(appointmentId);
 
       if (result.success && result.appointment) {
         setAppointment(result.appointment);
