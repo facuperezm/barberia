@@ -48,8 +48,11 @@ export async function createBookingAction(
 ): Promise<BookingResponse> {
   try {
     const requestHeaders = await headers();
+    // x-real-ip is platform-set on Vercel; last x-forwarded-for entry otherwise
     const clientIp =
-      requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+      requestHeaders.get("x-real-ip") ??
+      requestHeaders.get("x-forwarded-for")?.split(",").at(-1)?.trim() ??
+      "unknown";
     const rateLimitResult = await rateLimit(`booking:${clientIp}`, {
       maxRequests: 5,
       windowSeconds: 60,

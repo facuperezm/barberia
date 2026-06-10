@@ -67,8 +67,9 @@ export async function rateLimit(
 }
 
 export function getClientIdentifier(request: Request): string {
-  const forwarded = request.headers.get("x-forwarded-for");
+  // On Vercel, x-real-ip is platform-set; in x-forwarded-for the trustworthy
+  // client IP is the LAST entry (left entries are client-spoofable)
   const realIp = request.headers.get("x-real-ip");
-  const ip = forwarded?.split(",")[0]?.trim() || realIp || "unknown";
-  return ip;
+  const forwarded = request.headers.get("x-forwarded-for");
+  return realIp || forwarded?.split(",").at(-1)?.trim() || "unknown";
 }
