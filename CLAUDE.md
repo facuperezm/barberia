@@ -7,9 +7,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 pnpm dev              # Start development server
 pnpm build            # Build for production
-pnpm lint             # Run ESLint
-pnpm lint:fix         # Fix ESLint issues
-pnpm format           # Format with Prettier
+pnpm lint             # Run oxlint
+pnpm typecheck        # TypeScript type checking (tsc --noEmit)
+pnpm test             # Run vitest suite
+pnpm test:watch       # Vitest in watch mode
 
 # Database (Drizzle ORM with Neon PostgreSQL)
 pnpm db:push          # Push schema to database
@@ -17,6 +18,9 @@ pnpm db:studio        # Open Drizzle Studio
 pnpm db:generate      # Generate migrations
 pnpm db:migrate       # Run migrations
 pnpm db:seed          # Seed database (tsx --env-file .env src/drizzle/seed/seed.ts)
+
+# After any db:push, re-apply the booking exclusion constraint:
+pnpm tsx --env-file .env scripts/apply-booking-constraint.ts
 ```
 
 ## Architecture
