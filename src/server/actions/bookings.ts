@@ -5,6 +5,7 @@ import { appointments, barbers, customers, services } from "@/drizzle/schema";
 import { and, eq, notInArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import {
   sanitizeText,
   sanitizeEmail,
@@ -16,6 +17,7 @@ import { parseDateTime, now, formatTime, toArgentinaDate } from "@/lib/dates";
 import { createPreferenceForAppointment } from "@/server/payments/mercadopago";
 import { sendAppointmentConfirmation } from "@/lib/email";
 import { logger } from "@/lib/logger";
+import { rateLimit } from "@/lib/rate-limit";
 
 const bookingSchema = z.object({
   barberId: z.number().int().positive("Please select a barber"),
@@ -45,6 +47,21 @@ export async function createBookingAction(
   input: BookingInput,
 ): Promise<BookingResponse> {
   try {
+    const requestHeaders = await headers();
+    const clientIp =
+      requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+    const rateLimitResult = await rateLimit(`booking:${clientIp}`, {
+      maxRequests: 5,
+      windowSeconds: 60,
+    });
+
+    if (!rateLimitResult.success) {
+      return {
+        success: false,
+        error: "Too many booking attempts. Please wait a minute and try again.",
+      };
+    }
+
     const validatedData = bookingSchema.safeParse(input);
 
     if (!validatedData.success) {

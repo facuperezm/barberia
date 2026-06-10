@@ -454,6 +454,16 @@ export type InsertPayment = typeof payments.$inferInsert;
 
 //
 // ──────────────────────────────────────────────────────────────────────────────
+//   RATE LIMITS (serverless-safe request counting)
+// ──────────────────────────────────────────────────────────────────────────────
+export const rateLimits = pgTable("rate_limits", {
+  key: text("key").primaryKey(),
+  count: integer("count").notNull().default(0),
+  resetAt: timestamp("reset_at", { withTimezone: true }).notNull(),
+});
+
+//
+// ──────────────────────────────────────────────────────────────────────────────
 //   RELATIONS
 // ──────────────────────────────────────────────────────────────────────────────
 export const salonsRelations = relations(salons, ({ many }) => ({

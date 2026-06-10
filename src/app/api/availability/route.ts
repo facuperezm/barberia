@@ -17,7 +17,7 @@ import {
 export async function GET(request: Request) {
   // Apply rate limiting: 30 requests per minute
   const identifier = getClientIdentifier(request);
-  const rateLimitResult = rateLimit(identifier, { maxRequests: 30, windowSeconds: 60 });
+  const rateLimitResult = await rateLimit(identifier, { maxRequests: 30, windowSeconds: 60 });
 
   if (!rateLimitResult.success) {
     return NextResponse.json(

@@ -1,25 +1,10 @@
-/**
- * Simple in-memory rate limiter for API routes
- * For production, consider using Redis or a dedicated service like Upstash
- */
-
-interface RateLimitStore {
-  [key: string]: {
-    count: number;
-    resetTime: number;
-  };
-}
-
-const store: RateLimitStore = {};
+import "server-only";
+import { db } from "@/drizzle";
+import { sql } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 interface RateLimitConfig {
-  /**
-   * Maximum number of requests allowed in the time window
-   */
   maxRequests: number;
-  /**
-   * Time window in seconds
-   */
   windowSeconds: number;
 }
 
@@ -30,74 +15,60 @@ interface RateLimitResult {
 }
 
 /**
- * Check if a request should be rate limited
- * @param identifier - Unique identifier for the requester (e.g., IP address, user ID)
- * @param config - Rate limit configuration
- * @returns Rate limit result with success status and remaining requests
+ * Postgres-backed fixed-window rate limiter. Atomic via upsert, shared
+ * across serverless instances. Fails open: a limiter outage must not
+ * take down booking.
  */
-export function rateLimit(
+export async function rateLimit(
   identifier: string,
-  config: RateLimitConfig = { maxRequests: 10, windowSeconds: 60 }
-): RateLimitResult {
-  const now = Date.now();
+  config: RateLimitConfig = { maxRequests: 10, windowSeconds: 60 },
+): Promise<RateLimitResult> {
   const key = `${identifier}:${config.windowSeconds}`;
 
-  // Clean up expired entries periodically
-  if (Math.random() < 0.01) {
-    Object.keys(store).forEach((k) => {
-      if (store[k]!.resetTime < now) {
-        delete store[k];
-      }
+  try {
+    const result = await db.execute(sql`
+      INSERT INTO rate_limits (key, count, reset_at)
+      VALUES (${key}, 1, now() + make_interval(secs => ${config.windowSeconds}))
+      ON CONFLICT (key) DO UPDATE SET
+        count = CASE
+          WHEN rate_limits.reset_at < now() THEN 1
+          ELSE rate_limits.count + 1
+        END,
+        reset_at = CASE
+          WHEN rate_limits.reset_at < now()
+            THEN now() + make_interval(secs => ${config.windowSeconds})
+          ELSE rate_limits.reset_at
+        END
+      RETURNING count, reset_at
+    `);
+
+    // Opportunistic cleanup of stale windows (~1% of requests)
+    if (Math.random() < 0.01) {
+      db.execute(
+        sql`DELETE FROM rate_limits WHERE reset_at < now() - interval '1 day'`,
+      ).catch(() => {});
+    }
+
+    const row = result.rows[0] as { count: number; reset_at: string };
+    const count = Number(row.count);
+    const resetTime = new Date(row.reset_at).getTime();
+
+    return {
+      success: count <= config.maxRequests,
+      remaining: Math.max(0, config.maxRequests - count),
+      resetTime,
+    };
+  } catch (error) {
+    logger.error("Rate limiter failed — failing open", error as Error, {
+      key,
     });
+    return { success: true, remaining: 1, resetTime: Date.now() };
   }
-
-  // Get or create entry
-  const entry = store[key];
-
-  if (!entry || entry.resetTime < now) {
-    // Create new entry or reset expired one
-    store[key] = {
-      count: 1,
-      resetTime: now + config.windowSeconds * 1000,
-    };
-
-    return {
-      success: true,
-      remaining: config.maxRequests - 1,
-      resetTime: store[key]!.resetTime,
-    };
-  }
-
-  // Increment count
-  entry.count++;
-
-  if (entry.count > config.maxRequests) {
-    return {
-      success: false,
-      remaining: 0,
-      resetTime: entry.resetTime,
-    };
-  }
-
-  return {
-    success: true,
-    remaining: config.maxRequests - entry.count,
-    resetTime: entry.resetTime,
-  };
 }
 
-/**
- * Get client identifier from request (IP address or user agent hash)
- * @param request - Next.js request object
- * @returns Client identifier string
- */
 export function getClientIdentifier(request: Request): string {
-  // Try to get IP from headers
   const forwarded = request.headers.get("x-forwarded-for");
   const realIp = request.headers.get("x-real-ip");
-  const ip = forwarded?.split(",")[0] || realIp || "unknown";
-
-  // Include user agent to make identifier more unique
-  const userAgent = request.headers.get("user-agent") || "";
-  return `${ip}:${userAgent.slice(0, 50)}`;
+  const ip = forwarded?.split(",")[0]?.trim() || realIp || "unknown";
+  return ip;
 }
