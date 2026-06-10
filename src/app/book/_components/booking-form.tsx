@@ -83,7 +83,11 @@ export function BookingForm() {
           customerName: state.customerName,
           customerEmail: state.customerEmail,
           customerPhone: state.customerPhone,
-          date: state.date.toISOString().split("T")[0],
+          date: [
+            state.date.getFullYear(),
+            String(state.date.getMonth() + 1).padStart(2, "0"),
+            String(state.date.getDate()).padStart(2, "0"),
+          ].join("-"),
           time: state.time,
         });
 
