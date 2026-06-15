@@ -4,7 +4,8 @@ import { z } from "zod";
 export const env = createEnv({
   server: {
     DATABASE_URL: z.string().url(),
-    CLERK_SECRET_KEY: z.string(),
+    // BetterAuth: 32+ char secret used to sign/encrypt sessions & tokens.
+    BETTER_AUTH_SECRET: z.string().min(32),
     OWNER_EMAIL: z.string(),
     // MercadoPago Server Variables
     MERCADOPAGO_ACCESS_TOKEN: z.string(),
@@ -13,14 +14,12 @@ export const env = createEnv({
     RESEND_API_KEY: z.string(),
   },
   client: {
-    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string(),
     // MercadoPago Client Variables
     NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY: z.string(),
+    // Also the BetterAuth base URL (origin for magic-link callbacks).
     NEXT_PUBLIC_APP_URL: z.string().url(),
   },
   experimental__runtimeEnv: {
-    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
-      process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
     NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY:
       process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
