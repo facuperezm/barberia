@@ -28,7 +28,7 @@ pnpm tsx --env-file .env scripts/apply-booking-constraint.ts
 ### Tech Stack
 - **Framework**: Next.js 16 with App Router (React 19)
 - **Database**: Neon PostgreSQL with Drizzle ORM
-- **Auth**: Clerk
+- **Auth**: BetterAuth (passwordless magic-link via Resend; single-owner gate by `OWNER_EMAIL`)
 - **Payments**: MercadoPago
 - **Styling**: Tailwind CSS with shadcn/ui (Radix primitives)
 - **Data Fetching**: TanStack Query for client state, Server Components for server data
@@ -77,7 +77,7 @@ The app is designed for multi-tenant barbershop management. Core entities:
 
 **Server Actions**: Located in `src/server/actions/`. Use `"use server"` directive. Handle CRUD for all entities.
 
-**Environment Variables**: Validated with `@t3-oss/env-nextjs` in `src/env.ts`. Server vars: `DATABASE_URL`, `CLERK_SECRET_KEY`, `MERCADOPAGO_ACCESS_TOKEN`. Client vars prefixed with `NEXT_PUBLIC_`.
+**Environment Variables**: Validated with `@t3-oss/env-nextjs` in `src/env.ts`. Server vars: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `OWNER_EMAIL`, `MERCADOPAGO_ACCESS_TOKEN`, `RESEND_API_KEY`. Client vars prefixed with `NEXT_PUBLIC_`.
 
 ## Code Style
 
