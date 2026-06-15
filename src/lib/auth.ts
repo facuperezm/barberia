@@ -8,6 +8,7 @@ import { db } from "@/drizzle";
 import { user, session, account, verification } from "@/drizzle/schema";
 import { env } from "@/env";
 import { sendMagicLinkEmail } from "@/lib/email";
+import { isOwnerEmail } from "@/lib/owner";
 
 /**
  * BetterAuth server instance. Passwordless magic-link only — sign-in links are
@@ -47,9 +48,7 @@ export async function getSession() {
  */
 export async function isOwner(): Promise<boolean> {
   const result = await getSession();
-  const email = result?.user?.email;
-  if (!email) return false;
-  return email.toLowerCase() === env.OWNER_EMAIL.toLowerCase();
+  return isOwnerEmail(result?.user?.email, env.OWNER_EMAIL);
 }
 
 export async function requireOwner(): Promise<void> {

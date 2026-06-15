@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { auth } from "@clerk/nextjs/server";
+import { isOwner } from "@/lib/auth";
 import { db } from "@/drizzle";
 import { services } from "@/drizzle/schema";
 import { eq, and } from "drizzle-orm";
@@ -30,9 +30,7 @@ interface ActionResponse {
 async function updateServicePriceWithResponse(
   formData: FormData,
 ): Promise<ActionResponse> {
-  const { userId } = await auth();
-
-  if (!userId) {
+  if (!(await isOwner())) {
     return { success: false, error: "Unauthorized access." };
   }
 

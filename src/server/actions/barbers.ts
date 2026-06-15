@@ -5,7 +5,7 @@ import { barbers, workingHours, salons } from "@/drizzle/schema";
 import { asc, eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { auth } from "@clerk/nextjs/server";
+import { isOwner } from "@/lib/auth";
 import { type Barber } from "@/drizzle/schema";
 import { getCurrentSalonId } from "@/lib/salon-context";
 
@@ -32,9 +32,7 @@ interface ActionResponse {
 export async function deleteBarberWithResponse(
   formData: FormData,
 ): Promise<ActionResponse> {
-  const { userId } = await auth();
-
-  if (!userId) {
+  if (!(await isOwner())) {
     return { success: false, error: "Unauthorized access." };
   }
 
@@ -68,9 +66,7 @@ export async function deleteBarberWithResponse(
 }
 
 export async function addBarber(state: unknown, formData: FormData) {
-  const { userId } = await auth();
-
-  if (!userId) {
+  if (!(await isOwner())) {
     return { success: false, error: "Unauthorized access." };
   }
 
@@ -119,9 +115,7 @@ export async function updateBarber(data: {
   bio?: string | null;
   isActive?: boolean;
 }): Promise<ActionResponse> {
-  const { userId } = await auth();
-
-  if (!userId) {
+  if (!(await isOwner())) {
     return { success: false, error: "Unauthorized access." };
   }
 

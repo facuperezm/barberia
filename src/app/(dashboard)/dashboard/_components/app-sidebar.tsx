@@ -14,7 +14,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { NavUser } from "./sidebar-nav-user";
-import { useUser } from "@clerk/nextjs";
+import { useSession } from "@/lib/auth-client";
 
 // Menu items.
 const items = [
@@ -42,12 +42,12 @@ const items = [
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { user } = useUser();
+  const { data } = useSession();
 
   const userData = {
-    name: user?.fullName ?? "",
-    email: user?.emailAddresses[0].emailAddress ?? "",
-    avatar: user?.imageUrl ?? "",
+    name: data?.user?.name ?? data?.user?.email ?? "",
+    email: data?.user?.email ?? "",
+    avatar: data?.user?.image ?? "",
   };
 
   return (

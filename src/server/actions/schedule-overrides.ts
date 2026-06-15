@@ -4,7 +4,7 @@ import { scheduleOverrides, type ScheduleOverride } from "@/drizzle/schema";
 import { db } from "@/drizzle";
 import { barbers } from "@/drizzle/schema";
 import { and, eq, gte, lte, asc } from "drizzle-orm";
-import { auth } from "@clerk/nextjs/server";
+import { isOwner } from "@/lib/auth";
 import { getCurrentSalonId } from "@/lib/salon-context";
 import { revalidatePath } from "next/cache";
 
@@ -27,9 +27,7 @@ export async function saveScheduleOverride(data: {
   availableSlots: string[];
   reason: string;
 }): Promise<ScheduleOverrideResponse> {
-  const { userId } = await auth();
-
-  if (!userId) {
+  if (!(await isOwner())) {
     return { success: false, error: "Unauthorized access." };
   }
 
@@ -80,9 +78,7 @@ export async function getScheduleOverrides(
   barberId: number,
   options?: { startDate?: string; endDate?: string },
 ): Promise<ScheduleOverridesListResponse> {
-  const { userId } = await auth();
-
-  if (!userId) {
+  if (!(await isOwner())) {
     return { success: false, error: "Unauthorized access." };
   }
 
@@ -126,9 +122,7 @@ export async function getScheduleOverrides(
 export async function deleteScheduleOverride(
   overrideId: number,
 ): Promise<ScheduleOverrideResponse> {
-  const { userId } = await auth();
-
-  if (!userId) {
+  if (!(await isOwner())) {
     return { success: false, error: "Unauthorized access." };
   }
 

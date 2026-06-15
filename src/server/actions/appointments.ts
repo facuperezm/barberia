@@ -10,7 +10,7 @@ import {
   type Appointment,
 } from "@/drizzle/schema";
 import { z } from "zod";
-import { auth } from "@clerk/nextjs/server";
+import { isOwner } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { getCurrentSalonId } from "@/lib/salon-context";
 
@@ -19,9 +19,7 @@ import { getCurrentSalonId } from "@/lib/salon-context";
  */
 export async function getAppointments() {
   try {
-    const { userId } = await auth();
-
-    if (!userId) {
+    if (!(await isOwner())) {
       return { success: false, error: "Unauthorized access." };
     }
 
@@ -99,9 +97,7 @@ export async function updateAppointmentStatus(
   appointmentId: number,
   status: Appointment["status"],
 ) {
-  const { userId } = await auth();
-
-  if (!userId) {
+  if (!(await isOwner())) {
     return { success: false, error: "Unauthorized access." };
   }
 
