@@ -18,7 +18,6 @@
     "db:seed": "tsx --env-file .env src/drizzle/seed/seed.ts"
   },
   "dependencies": {
-    "@clerk/nextjs": "^6.33.2",
     "@date-fns/tz": "^1.4.1",
     "@neondatabase/serverless": "^0.10.4",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -39,6 +38,7 @@
     "@react-email/tailwind": "^0.1.0",
     "@t3-oss/env-nextjs": "^0.11.1",
     "@tanstack/react-query": "^5.80.6",
+    "better-auth": "^1.6.18",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",

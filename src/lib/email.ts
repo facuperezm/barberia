@@ -2,10 +2,31 @@ import { Resend } from "resend";
 import AppointmentConfirmationEmail from "@/components/emails/appointment-confirmation";
 import AppointmentReminderEmail from "@/components/emails/appointment-reminder";
 import FeedbackRequestEmail from "@/components/emails/feedback-request";
+import MagicLinkEmail from "@/components/emails/magic-link";
 import { formatDate, toArgentinaDate } from "@/lib/dates";
 import { env } from "@/env";
 
 const resend = new Resend(env.RESEND_API_KEY);
+
+export async function sendMagicLinkEmail({
+  email,
+  url,
+}: {
+  email: string;
+  url: string;
+}) {
+  try {
+    await resend.emails.send({
+      from: "Modern Barbershop <login@modern-barbershop.com>",
+      to: email,
+      subject: "Your sign-in link - Modern Barbershop",
+      react: MagicLinkEmail({ url }),
+    });
+  } catch (error) {
+    console.error("Error sending magic link email:", error);
+    throw error;
+  }
+}
 
 export async function sendAppointmentConfirmation({
   customerName,

@@ -1,4 +1,4 @@
-import { RedirectToSignIn } from "@clerk/nextjs";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { isOwner } from "@/lib/auth";
 import LayoutLoading from "./_components/layout-loading";
@@ -13,7 +13,7 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   if (!(await isOwner())) {
-    return <RedirectToSignIn />;
+    redirect("/sign-in");
   }
 
   const cookieStore = await cookies();
