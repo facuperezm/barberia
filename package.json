@@ -15,7 +15,8 @@
     "db:studio": "drizzle-kit studio --config=./drizzle.config.ts",
     "db:generate": "drizzle-kit generate --config=./drizzle.config.ts",
     "db:migrate": "drizzle-kit migrate --config=./drizzle.config.ts",
-    "db:seed": "tsx --env-file .env src/drizzle/seed/seed.ts"
+    "db:seed": "tsx --env-file .env src/drizzle/seed/seed.ts",
+    "preflight": "tsx scripts/preflight.ts"
   },
   "dependencies": {
     "@date-fns/tz": "^1.4.1",
