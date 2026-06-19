@@ -54,7 +54,8 @@ export const salonMembers = pgTable(
     userId: text("user_id")
       .references(() => user.id, { onDelete: "cascade" })
       .notNull(),
-    role: memberRoleEnum("role").notNull().default("owner"),
+    // Least-privilege default; owner-granting paths set role:"owner" explicitly.
+    role: memberRoleEnum("role").notNull().default("staff"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
