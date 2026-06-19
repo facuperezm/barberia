@@ -185,32 +185,30 @@ export async function getBarbers(): Promise<Barber[]> {
 }
 
 /**
- * Get barbers for public booking page (no auth required)
- * Returns active barbers from the default salon
+ * Resolve a salon by its URL slug (public, no auth required).
  */
-export async function getPublicBarbers(): Promise<Barber[]> {
+export async function getPublicSalonBySlug(
+  slug: string,
+): Promise<{ id: number; name: string; slug: string } | null> {
+  const [salon] = await db
+    .select({ id: salons.id, name: salons.name, slug: salons.slug })
+    .from(salons)
+    .where(and(eq(salons.slug, slug), eq(salons.isActive, true)))
+    .limit(1);
+  return salon ?? null;
+}
+
+/**
+ * Get barbers for public booking page (no auth required).
+ * Scoped to the given salonId.
+ */
+export async function getPublicBarbers(salonId: number): Promise<Barber[]> {
   try {
-    const [defaultSalon] = await db
-      .select()
-      .from(salons)
-      .limit(1);
-
-    if (!defaultSalon) {
-      return [];
-    }
-
-    const allBarbers = await db
+    return await db
       .select()
       .from(barbers)
-      .where(
-        and(
-          eq(barbers.salonId, defaultSalon.id),
-          eq(barbers.isActive, true)
-        )
-      )
+      .where(and(eq(barbers.salonId, salonId), eq(barbers.isActive, true)))
       .orderBy(asc(barbers.name));
-
-    return allBarbers;
   } catch {
     return [];
   }

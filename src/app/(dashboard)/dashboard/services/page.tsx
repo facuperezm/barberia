@@ -4,9 +4,10 @@ import { DashboardHeader } from "@/app/(dashboard)/dashboard/_components/dashboa
 import { DashboardShell } from "@/app/(dashboard)/dashboard/_components/dashboard-shell";
 import { getServices } from "@/server/queries/services";
 import ClientDialogServices from "./_components/client-dialog-services";
+import { getCurrentSalonId } from "@/lib/salon-context";
 
 export default async function ServicesPage() {
-  const services = await getServices();
+  const services = await getServices(await getCurrentSalonId());
 
   return (
     <DashboardShell>

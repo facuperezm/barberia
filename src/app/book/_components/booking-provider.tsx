@@ -23,6 +23,7 @@ const initialState: BookingState = {
 };
 
 interface BookingContextType {
+  salonId: number;
   state: BookingState;
   setState: (state: Partial<BookingState>) => void;
   step: number;
@@ -34,7 +35,13 @@ interface BookingContextType {
 
 const BookingContext = createContext<BookingContextType | undefined>(undefined);
 
-export function BookingProvider({ children }: { children: React.ReactNode }) {
+export function BookingProvider({
+  children,
+  salonId,
+}: {
+  children: React.ReactNode;
+  salonId: number;
+}) {
   const [state, setBookingState] = useState<BookingState>(initialState);
   const [step, setStepState] = useState(0);
 
@@ -53,7 +60,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
 
   const canNavigateToStep = useCallback((targetStep: number) => {
     if (targetStep === 0) return true;
-    
+
     // Check if previous steps are completed
     for (let i = 0; i < targetStep; i++) {
       switch (i) {
@@ -79,11 +86,12 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <BookingContext.Provider
-      value={{ 
-        state, 
-        setState, 
-        step, 
-        setStep, 
+      value={{
+        salonId,
+        state,
+        setState,
+        step,
+        setStep,
         resetBooking,
         goToStep,
         canNavigateToStep

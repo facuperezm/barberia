@@ -19,19 +19,20 @@ const getCachedAppointments = (salonId: number) =>
     },
   );
 
-const cachedServices = unstable_cache(
-  async () => await getServices(),
-  ["services"],
-  {
-    revalidate: 3600,
-    tags: ["services"],
-  },
-);
+const getCachedServices = (salonId: number) =>
+  unstable_cache(
+    async () => await getServices(salonId),
+    ["services", String(salonId)],
+    {
+      revalidate: 3600,
+      tags: ["services"],
+    },
+  );
 
 export default async function DashboardPage() {
   const salonId = await getCurrentSalonId();
   const appointments = await getCachedAppointments(salonId)();
-  const services = await cachedServices();
+  const services = await getCachedServices(salonId)();
 
   if (!appointments || !services) {
     return <CardSkeleton />;

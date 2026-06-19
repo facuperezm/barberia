@@ -6,19 +6,14 @@ import { Scissors } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { type Service } from "@/drizzle/schema";
-import { getServices as getServicesServer } from "@/server/queries/services";
-
-async function getServices(): Promise<Service[]> {
-  const services = await getServicesServer();
-  return services;
-}
+import { getPublicServices } from "@/server/queries/services";
 
 export function ServiceStep() {
-  const { state, setState } = useBooking();
+  const { state, setState, salonId } = useBooking();
 
   const { data: services, isLoading } = useQuery<Service[]>({
-    queryKey: ["services"],
-    queryFn: getServices,
+    queryKey: ["services", "book", salonId],
+    queryFn: () => getPublicServices(salonId),
     staleTime: 1000 * 60 * 10, // 10 minutes
   });
 

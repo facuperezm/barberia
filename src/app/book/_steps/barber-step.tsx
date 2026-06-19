@@ -9,16 +9,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getPublicBarbers } from "@/server/actions/barbers";
 import { type Barber } from "@/drizzle/schema";
 
-async function getBarbers(): Promise<Barber[]> {
-  return getPublicBarbers();
-}
-
 export function BarberStep() {
-  const { state, setState } = useBooking();
+  const { state, setState, salonId } = useBooking();
 
   const { data: barbers, isLoading } = useQuery<Barber[]>({
-    queryKey: ["barbers", "book"],
-    queryFn: getBarbers,
+    queryKey: ["barbers", "book", salonId],
+    queryFn: () => getPublicBarbers(salonId),
     staleTime: 1000 * 60 * 10, // 10 minutes
   });
 
