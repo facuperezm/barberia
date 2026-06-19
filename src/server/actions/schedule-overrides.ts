@@ -4,8 +4,7 @@ import { scheduleOverrides, type ScheduleOverride } from "@/drizzle/schema";
 import { db } from "@/drizzle";
 import { barbers } from "@/drizzle/schema";
 import { and, eq, gte, lte, asc } from "drizzle-orm";
-import { isOwner } from "@/lib/auth";
-import { getCurrentSalonId } from "@/lib/salon-context";
+import { requireSalonMember } from "@/lib/salon-context";
 import { revalidatePath } from "next/cache";
 
 interface ScheduleOverrideResponse {
@@ -27,14 +26,16 @@ export async function saveScheduleOverride(data: {
   availableSlots: string[];
   reason: string;
 }): Promise<ScheduleOverrideResponse> {
-  if (!(await isOwner())) {
+  let salonId: number;
+  try {
+    ({ salonId } = await requireSalonMember());
+  } catch {
     return { success: false, error: "Unauthorized access." };
   }
 
   const { barberId, date, isWorkingDay, availableSlots, reason } = data;
 
   try {
-    const salonId = await getCurrentSalonId();
 
     // Verify barber belongs to current salon
     const barber = await db
@@ -78,12 +79,14 @@ export async function getScheduleOverrides(
   barberId: number,
   options?: { startDate?: string; endDate?: string },
 ): Promise<ScheduleOverridesListResponse> {
-  if (!(await isOwner())) {
+  let salonId: number;
+  try {
+    ({ salonId } = await requireSalonMember());
+  } catch {
     return { success: false, error: "Unauthorized access." };
   }
 
   try {
-    const salonId = await getCurrentSalonId();
 
     // Verify barber belongs to current salon
     const barber = await db
@@ -122,12 +125,14 @@ export async function getScheduleOverrides(
 export async function deleteScheduleOverride(
   overrideId: number,
 ): Promise<ScheduleOverrideResponse> {
-  if (!(await isOwner())) {
+  let salonId: number;
+  try {
+    ({ salonId } = await requireSalonMember());
+  } catch {
     return { success: false, error: "Unauthorized access." };
   }
 
   try {
-    const salonId = await getCurrentSalonId();
 
     // First get the override to verify it belongs to a barber in the current salon
     const [override] = await db

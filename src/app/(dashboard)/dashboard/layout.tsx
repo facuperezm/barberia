@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { isOwner } from "@/lib/auth";
+import { requireSalonMember } from "@/lib/salon-context";
 import LayoutLoading from "./_components/layout-loading";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import HeaderNav from "./_components/nav-menu";
@@ -12,7 +12,9 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  if (!(await isOwner())) {
+  try {
+    await requireSalonMember();
+  } catch {
     redirect("/sign-in");
   }
 

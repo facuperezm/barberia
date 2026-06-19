@@ -5,9 +5,8 @@ import { barbers, workingHours, salons } from "@/drizzle/schema";
 import { asc, eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { isOwner } from "@/lib/auth";
 import { type Barber } from "@/drizzle/schema";
-import { getCurrentSalonId } from "@/lib/salon-context";
+import { requireSalonMember, getCurrentSalonId } from "@/lib/salon-context";
 
 const barberSchema = z.object({
   name: z.string().min(1, "Name is required."),
@@ -32,7 +31,10 @@ interface ActionResponse {
 export async function deleteBarberWithResponse(
   formData: FormData,
 ): Promise<ActionResponse> {
-  if (!(await isOwner())) {
+  let salonId: number;
+  try {
+    ({ salonId } = await requireSalonMember());
+  } catch {
     return { success: false, error: "Unauthorized access." };
   }
 
@@ -43,7 +45,6 @@ export async function deleteBarberWithResponse(
   }
 
   try {
-    const salonId = await getCurrentSalonId();
     const deleteResult = await db
       .delete(barbers)
       .where(
@@ -66,7 +67,10 @@ export async function deleteBarberWithResponse(
 }
 
 export async function addBarber(state: unknown, formData: FormData) {
-  if (!(await isOwner())) {
+  let salonId: number;
+  try {
+    ({ salonId } = await requireSalonMember());
+  } catch {
     return { success: false, error: "Unauthorized access." };
   }
 
@@ -86,8 +90,6 @@ export async function addBarber(state: unknown, formData: FormData) {
   const { name, email, phone, imageUrl } = inputValidation.data;
 
   try {
-    // Get current salon context
-    const salonId = await getCurrentSalonId();
 
     const newBarber = await db
       .insert(barbers)
@@ -115,7 +117,10 @@ export async function updateBarber(data: {
   bio?: string | null;
   isActive?: boolean;
 }): Promise<ActionResponse> {
-  if (!(await isOwner())) {
+  let salonId: number;
+  try {
+    ({ salonId } = await requireSalonMember());
+  } catch {
     return { success: false, error: "Unauthorized access." };
   }
 
@@ -138,7 +143,6 @@ export async function updateBarber(data: {
     inputValidation.data;
 
   try {
-    const salonId = await getCurrentSalonId();
 
     const [updatedBarber] = await db
       .update(barbers)

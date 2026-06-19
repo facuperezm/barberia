@@ -10,9 +10,8 @@ import {
   type Appointment,
 } from "@/drizzle/schema";
 import { z } from "zod";
-import { isOwner } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
-import { getCurrentSalonId } from "@/lib/salon-context";
+import { requireSalonMember } from "@/lib/salon-context";
 import { reconcilePendingAppointment } from "@/server/payments/reconcile";
 import { logger } from "@/lib/logger";
 
@@ -20,12 +19,14 @@ import { logger } from "@/lib/logger";
  * Retrieves all appointments for current salon with related data
  */
 export async function getAppointments() {
+  let salonId: number;
   try {
-    if (!(await isOwner())) {
-      return { success: false, error: "Unauthorized access." };
-    }
+    ({ salonId } = await requireSalonMember());
+  } catch {
+    return { success: false, error: "Unauthorized access." };
+  }
 
-    const salonId = await getCurrentSalonId();
+  try {
 
     const allAppointments = await db
       .select({
@@ -126,12 +127,14 @@ export async function updateAppointmentStatus(
   appointmentId: number,
   status: Appointment["status"],
 ) {
-  if (!(await isOwner())) {
+  let salonId: number;
+  try {
+    ({ salonId } = await requireSalonMember());
+  } catch {
     return { success: false, error: "Unauthorized access." };
   }
 
   try {
-    const salonId = await getCurrentSalonId();
 
     const [updated] = await db
       .update(appointments)
