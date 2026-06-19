@@ -56,6 +56,8 @@ export const dayOfWeekEnum = pgEnum("day_of_week", [
   "saturday",
 ]);
 
+export const memberRoleEnum = pgEnum("member_role", ["owner", "admin", "staff"]);
+
 //
 // ──────────────────────────────────────────────────────────────────────────────
 //   SALONS (Multi-tenant support)
@@ -558,6 +560,30 @@ export const verification = pgTable(
   (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
+export const salonMembers = pgTable(
+  "salon_members",
+  {
+    id: serial("id").primaryKey(),
+    salonId: integer("salon_id")
+      .references(() => salons.id, { onDelete: "cascade" })
+      .notNull(),
+    userId: text("user_id")
+      .references(() => user.id, { onDelete: "cascade" })
+      .notNull(),
+    role: memberRoleEnum("role").notNull().default("owner"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("salon_members_salon_user_idx").on(table.salonId, table.userId),
+    index("salon_members_user_idx").on(table.userId),
+  ],
+);
+
+export type SalonMember = typeof salonMembers.$inferSelect;
+export type InsertSalonMember = typeof salonMembers.$inferInsert;
+
 //
 // ──────────────────────────────────────────────────────────────────────────────
 //   RELATIONS
@@ -567,6 +593,7 @@ export const salonsRelations = relations(salons, ({ many }) => ({
   services: many(services),
   customers: many(customers),
   appointments: many(appointments),
+  members: many(salonMembers),
 }));
 
 export const barbersRelations = relations(barbers, ({ many, one }) => ({
@@ -650,6 +677,7 @@ export const paymentsRelations = relations(payments, ({ one }) => ({
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),
   accounts: many(account),
+  salonMembers: many(salonMembers),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -662,6 +690,17 @@ export const sessionRelations = relations(session, ({ one }) => ({
 export const accountRelations = relations(account, ({ one }) => ({
   user: one(user, {
     fields: [account.userId],
+    references: [user.id],
+  }),
+}));
+
+export const salonMembersRelations = relations(salonMembers, ({ one }) => ({
+  salon: one(salons, {
+    fields: [salonMembers.salonId],
+    references: [salons.id],
+  }),
+  user: one(user, {
+    fields: [salonMembers.userId],
     references: [user.id],
   }),
 }));
