@@ -2,7 +2,7 @@
 
 import { db } from "@/drizzle";
 import { appointments, barbers, customers, services } from "@/drizzle/schema";
-import { and, eq, notInArray, sql } from "drizzle-orm";
+import { and, eq, lt, notInArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
@@ -14,6 +14,7 @@ import {
   sanitizeTime,
 } from "@/lib/sanitize";
 import { parseDateTime, now, formatTime, toArgentinaDate } from "@/lib/dates";
+import { HOLD_TTL_MS } from "@/server/booking/hold-expiry";
 import { createPreferenceForAppointment } from "@/server/payments/mercadopago";
 import { sendAppointmentConfirmation } from "@/lib/email";
 import { logger } from "@/lib/logger";
@@ -132,6 +133,24 @@ export async function createBookingAction(
       const endDateTime = new Date(
         appointmentDateTime.getTime() + service.durationMinutes * 60000,
       );
+
+      // Release abandoned checkout holds that overlap this slot. A paid booking
+      // sits in `pending` and reserves its slot via the exclusion constraint,
+      // but MercadoPago sends no webhook when a customer abandons checkout. Past
+      // the hold TTL, cancel the stale hold so this booking — and the DB
+      // constraint — can claim the slot instead of being blocked forever.
+      const holdCutoff = new Date(now().getTime() - HOLD_TTL_MS);
+      await tx
+        .update(appointments)
+        .set({ status: "cancelled", updatedAt: new Date() })
+        .where(
+          and(
+            eq(appointments.barberId, barberId),
+            eq(appointments.status, "pending"),
+            lt(appointments.createdAt, holdCutoff),
+            sql`${appointments.appointmentAt} < ${endDateTime} AND ${appointments.endTime} > ${appointmentDateTime}`,
+          ),
+        );
 
       // Range-overlap check against any non-cancelled appointment.
       // The DB exclusion constraint is the real guarantee under concurrency;

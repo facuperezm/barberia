@@ -12,7 +12,9 @@ import {
   getDayOfWeek,
   generateTimeSlots,
   isSlotBlocked,
+  now,
 } from "@/lib/dates";
+import { isHoldExpired } from "@/server/booking/hold-expiry";
 
 export async function GET(request: Request) {
   // Apply rate limiting: 30 requests per minute
@@ -124,6 +126,8 @@ export async function GET(request: Request) {
       .select({
         time: appointments.time,
         durationMinutes: services.durationMinutes,
+        status: appointments.status,
+        createdAt: appointments.createdAt,
       })
       .from(appointments)
       .innerJoin(services, eq(appointments.serviceId, services.id))
@@ -135,9 +139,16 @@ export async function GET(request: Request) {
         ),
       );
 
+    // Abandoned checkout holds (pending past the TTL) no longer block the slot —
+    // MercadoPago sends no webhook on abandonment, so they'd otherwise linger.
+    const currentTime = now();
+    const blockingAppointments = existingAppointments.filter(
+      (apt) => !isHoldExpired(apt, currentTime),
+    );
+
     // Map slots to include availability
     const slotsWithAvailability = timeSlots.map((time) => {
-      const blocked = existingAppointments.some((apt) => {
+      const blocked = blockingAppointments.some((apt) => {
         if (!apt.time) {
           return false;
         }

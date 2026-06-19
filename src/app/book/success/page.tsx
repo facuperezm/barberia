@@ -3,14 +3,16 @@
 import { useSearchParams } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarCheck, Mail, ArrowLeft, Loader2 } from "lucide-react";
+import { CalendarCheck, Clock, XCircle, Mail, ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { formatDate, formatTime, toArgentinaDate } from "@/lib/dates";
 import { Suspense, useEffect, useState } from "react";
 import { getPublicAppointmentByPublicId } from "@/server/actions/appointments";
+import { bookingResultContent } from "./booking-result";
 
 interface AppointmentDetails {
   id: string;
+  status: string;
   appointmentAt: Date | null;
   barberName: string;
   serviceName: string;
@@ -96,51 +98,81 @@ function BookingDetails() {
     ? formatTime(toArgentinaDate(new Date(appointment.appointmentAt)))
     : "";
 
+  const content = bookingResultContent(appointment.status);
+  const toneStyles = {
+    success: {
+      Icon: CalendarCheck,
+      iconClass: "text-primary",
+      bgClass: "bg-primary/10",
+    },
+    pending: {
+      Icon: Clock,
+      iconClass: "text-yellow-600",
+      bgClass: "bg-yellow-500/10",
+    },
+    cancelled: {
+      Icon: XCircle,
+      iconClass: "text-red-600",
+      bgClass: "bg-red-500/10",
+    },
+  } as const;
+  const { Icon, iconClass, bgClass } = toneStyles[content.tone];
+  const isCancelled = content.tone === "cancelled";
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-lg space-y-6 p-8 text-center">
         <div className="space-y-2">
           <div className="flex justify-center">
-            <div className="flex size-12 items-center justify-center rounded-full bg-primary/10">
-              <CalendarCheck className="size-6 text-primary" />
+            <div
+              className={`flex size-12 items-center justify-center rounded-full ${bgClass}`}
+            >
+              <Icon className={`size-6 ${iconClass}`} />
             </div>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            Thank You for Choosing Us!
-          </h1>
-          <p className="text-muted-foreground">
-            Your appointment has been successfully booked
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight">{content.title}</h1>
+          <p className="text-muted-foreground">{content.description}</p>
         </div>
 
-        <div className="space-y-4 rounded-lg bg-muted/50 p-6">
-          <div className="space-y-2">
-            <p className="text-lg font-medium">{formattedDate}</p>
-            <p className="font-semibold text-primary">{formattedTime}</p>
+        {!isCancelled && (
+          <div className="space-y-4 rounded-lg bg-muted/50 p-6">
+            <div className="space-y-2">
+              <p className="text-lg font-medium">{formattedDate}</p>
+              <p className="font-semibold text-primary">{formattedTime}</p>
+            </div>
+            <div className="space-y-1">
+              <p>
+                with{" "}
+                <span className="font-medium">{appointment.barberName}</span>
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Service: {appointment.serviceName}
+              </p>
+            </div>
           </div>
-          <div className="space-y-1">
-            <p>
-              with <span className="font-medium">{appointment.barberName}</span>
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Service: {appointment.serviceName}
-            </p>
-          </div>
-        </div>
+        )}
 
         <div className="space-y-4">
-          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-            <Mail className="size-4" />
-            <p>Please check your email for confirmation details</p>
-          </div>
+          {!isCancelled && (
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <Mail className="size-4" />
+              <p>Please check your email for confirmation details</p>
+            </div>
+          )}
 
           <div className="space-y-2">
-            <Link href="/">
-              <Button className="w-full">
-                <ArrowLeft className="mr-2 size-4" />
-                Return to Home
-              </Button>
-            </Link>
+            {isCancelled ? (
+              <Link href="/book">
+                <Button className="w-full">Try Again</Button>
+              </Link>
+            ) : (
+              <Link href="/">
+                <Button className="w-full">
+                  <ArrowLeft className="mr-2 size-4" />
+                  Return to Home
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </Card>

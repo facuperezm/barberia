@@ -13,6 +13,8 @@ import { z } from "zod";
 import { isOwner } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { getCurrentSalonId } from "@/lib/salon-context";
+import { reconcilePendingAppointment } from "@/server/payments/reconcile";
+import { logger } from "@/lib/logger";
 
 /**
  * Retrieves all appointments for current salon with related data
@@ -56,8 +58,13 @@ export async function getAppointments() {
 const publicIdSchema = z.string().uuid();
 
 /**
- * Get appointment details by public UUID (for the booking success page).
- * Uses the non-guessable publicId so appointment data can't be enumerated.
+ * Resolve a booking's details and current status by public UUID (for the
+ * booking result page). Uses the non-guessable publicId so appointment data
+ * can't be enumerated.
+ *
+ * If the booking is still `pending` (paid, but the payment webhook hasn't
+ * landed yet), this reconciles directly against MercadoPago first, so the
+ * customer sees an accurate status even when the webhook is delayed or lost.
  */
 export async function getPublicAppointmentByPublicId(publicId: string) {
   const parsed = publicIdSchema.safeParse(publicId);
@@ -69,6 +76,8 @@ export async function getPublicAppointmentByPublicId(publicId: string) {
     const [result] = await db
       .select({
         id: appointments.publicId,
+        numericId: appointments.id,
+        status: appointments.status,
         appointmentAt: appointments.appointmentAt,
         barberName: barbers.name,
         serviceName: services.name,
@@ -84,7 +93,27 @@ export async function getPublicAppointmentByPublicId(publicId: string) {
       return { success: false as const, error: "Appointment not found" };
     }
 
-    return { success: true as const, appointment: result };
+    let status = result.status;
+
+    // Webhook-loss fallback: verify the payment with MercadoPago and re-read.
+    if (status === "pending") {
+      try {
+        await reconcilePendingAppointment(result.numericId);
+        const [refreshed] = await db
+          .select({ status: appointments.status })
+          .from(appointments)
+          .where(eq(appointments.id, result.numericId))
+          .limit(1);
+        if (refreshed) status = refreshed.status;
+      } catch (error) {
+        logger.error("Payment reconciliation failed", error as Error, {
+          appointmentId: result.numericId,
+        });
+      }
+    }
+
+    const { numericId: _numericId, ...appointment } = result;
+    return { success: true as const, appointment: { ...appointment, status } };
   } catch {
     return { success: false as const, error: "Failed to fetch appointment" };
   }
