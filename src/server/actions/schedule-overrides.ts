@@ -68,7 +68,6 @@ export async function saveScheduleOverride(data: {
       .returning();
 
     revalidatePath("/dashboard/team");
-    revalidatePath("/dashboard/employees");
     return { success: true, override };
   } catch {
     return { success: false, error: "Failed to save schedule override." };
@@ -164,7 +163,6 @@ export async function deleteScheduleOverride(
       .where(eq(scheduleOverrides.id, overrideId));
 
     revalidatePath("/dashboard/team");
-    revalidatePath("/dashboard/employees");
     return { success: true };
   } catch {
     return { success: false, error: "Failed to delete schedule override." };

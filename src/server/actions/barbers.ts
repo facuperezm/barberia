@@ -59,7 +59,7 @@ export async function deleteBarberWithResponse(
       return { success: false, error: "Barber not found or access denied." };
     }
 
-    revalidatePath("/dashboard/barbers");
+    revalidatePath("/dashboard/team");
     return { success: true };
   } catch {
     return { success: false, error: "Failed to delete barber." };
@@ -101,7 +101,7 @@ export async function addBarber(state: unknown, formData: FormData) {
         imageUrl: imageUrl as string,
       })
       .returning();
-    revalidatePath("/dashboard/barbers");
+    revalidatePath("/dashboard/team");
     return { success: true, barber: newBarber };
   } catch {
     return { success: false, error: "Failed to add barber." };
@@ -162,8 +162,6 @@ export async function updateBarber(data: {
       return { success: false, error: "Barber not found or access denied." };
     }
 
-    revalidatePath("/dashboard/barbers");
-    revalidatePath("/dashboard/employees");
     revalidatePath("/dashboard/team");
     return { success: true, barber: updatedBarber };
   } catch {
@@ -293,7 +291,6 @@ export async function updateBarberSchedule(
     await tx.insert(workingHours).values(valuesToInsert);
   });
 
-  revalidatePath("/dashboard/employees");
   revalidatePath("/dashboard/team");
   return { success: true };
 }
