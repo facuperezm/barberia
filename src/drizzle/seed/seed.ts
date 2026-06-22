@@ -8,9 +8,12 @@ import {
   workingHours,
   ratings,
   payments,
+  user,
+  salonMembers,
 } from "@/drizzle/schema";
 import { db } from "@/drizzle";
 import { faker } from "@faker-js/faker";
+import { DEV_TEST_EMAIL } from "@/lib/dev-auth";
 
 async function seed() {
   try {
@@ -32,7 +35,9 @@ async function seed() {
       await tx.delete(customers);
       await tx.delete(services);
       await tx.delete(barbers);
+      await tx.delete(salonMembers);
       await tx.delete(salons);
+      await tx.delete(user);
       console.timeEnd("🧹 Clear data");
 
       // **2. Seed Salons**
@@ -56,6 +61,24 @@ async function seed() {
         .values(salonsData)
         .returning();
       const mainSalon = insertedSalons[0]!;
+
+      // Seed test owner + owner membership
+      const [testOwner] = await tx
+        .insert(user)
+        .values({
+          id: "test-owner",
+          name: "Test Owner",
+          email: DEV_TEST_EMAIL,
+          emailVerified: true,
+        })
+        .returning({ id: user.id });
+      await tx.insert(salonMembers).values({
+        salonId: mainSalon.id,
+        userId: testOwner!.id,
+        role: "owner",
+      });
+      console.log(`   👤 Seeded test owner ${DEV_TEST_EMAIL} → ${mainSalon.slug}`);
+
       console.timeEnd("🏪 Seed salons");
 
       // **3. Seed Barbers**
