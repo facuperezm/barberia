@@ -8,6 +8,11 @@ import { db } from "@/drizzle";
 import { user, session, account, verification } from "@/drizzle/schema";
 import { env } from "@/env";
 import { sendMagicLinkEmail } from "@/lib/email";
+import {
+  DEV_TEST_EMAIL,
+  isDevAuthEnabled,
+  captureDevMagicToken,
+} from "@/lib/dev-auth";
 
 /**
  * BetterAuth server instance. Passwordless magic-link only — sign-in links are
@@ -25,7 +30,11 @@ export const auth = betterAuth({
   }),
   plugins: [
     magicLink({
-      sendMagicLink: async ({ email, url }) => {
+      sendMagicLink: async ({ email, url, token }) => {
+        if (isDevAuthEnabled && email === DEV_TEST_EMAIL) {
+          captureDevMagicToken(token);
+          return; // never email the local test account
+        }
         await sendMagicLinkEmail({ email, url });
       },
     }),

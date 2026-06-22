@@ -4,6 +4,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { authClient } from "@/lib/auth-client";
+import { isDevAuthEnabled } from "@/lib/dev-auth";
+import { devSignInAsTestOwner } from "@/server/actions/dev-auth";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -100,6 +102,13 @@ export default function SignInPage() {
           </>
         )}
       </Card>
+      {isDevAuthEnabled && (
+        <form action={devSignInAsTestOwner} className="mt-4 w-full max-w-sm">
+          <Button type="submit" variant="outline" className="w-full">
+            Dev login as test owner
+          </Button>
+        </form>
+      )}
     </div>
   );
 }
