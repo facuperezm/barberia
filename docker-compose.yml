@@ -1,11 +1,40 @@
 name: barbershop
 
+# Local development database. This is fully isolated from production Neon —
+# there is no network path from here to prod. See README / .env.example for the
+# DATABASE_URL to use against it.
+#
+#   postgres      raw Postgres, exposed on :5432 (used by drizzle-kit, db:studio)
+#   neon-proxy    speaks Neon's WebSocket/HTTP protocol on :4444 so the app's
+#                 `drizzle-orm/neon-serverless` driver works unchanged locally
 services:
-  pg:
-    image: bitnami/postgresql:13.16.0
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=barbershop
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: barbershop
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d barbershop"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  neon-proxy:
+    image: ghcr.io/timowilhelm/local-neon-http-proxy:main
+    restart: unless-stopped
+    environment:
+      PG_CONNECTION_STRING: postgres://postgres:postgres@postgres:5432/barbershop
+    ports:
+      - "4444:4444"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:

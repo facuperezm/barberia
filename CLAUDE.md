@@ -12,6 +12,12 @@ pnpm typecheck        # TypeScript type checking (tsc --noEmit)
 pnpm test             # Run vitest suite
 pnpm test:watch       # Vitest in watch mode
 
+# Local database (Docker) — isolated from prod, see docker-compose.yml
+pnpm db:up            # Start local Postgres + Neon proxy (waits for healthy)
+pnpm db:down          # Stop containers (keeps data volume)
+pnpm db:reset         # Drop the data volume and start fresh
+pnpm db:setup         # db:up + db:push + apply constraint + seed (one-shot)
+
 # Database (Drizzle ORM with Neon PostgreSQL)
 pnpm db:push          # Push schema to database
 pnpm db:studio        # Open Drizzle Studio
@@ -22,6 +28,14 @@ pnpm db:seed          # Seed database (tsx --env-file .env src/drizzle/seed/seed
 # After any db:push, re-apply the booking exclusion constraint:
 pnpm tsx --env-file .env scripts/apply-booking-constraint.ts
 ```
+
+> **Local dev DB**: `docker-compose.yml` runs Postgres + a Neon WebSocket proxy
+> so the `neon-serverless` driver works locally unchanged. Point `DATABASE_URL`
+> at `postgres://postgres:postgres@db.localtest.me:5432/barbershop` (see
+> `.env.example`). `src/drizzle/index.ts` detects that `db.localtest.me` host and
+> routes through the proxy; any other host (a real Neon branch) is untouched.
+> The seed runs in a transaction and reserves a unique on-the-hour slot per
+> barber so it never trips `appointments_no_double_booking`.
 
 ## Architecture
 
