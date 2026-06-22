@@ -79,13 +79,6 @@ function checkEnvSemantics(): void {
     webhookSecret ? "present" : "(unset) — webhooks will 401",
   );
 
-  const ownerEmail = process.env.OWNER_EMAIL ?? "";
-  record(
-    "OWNER_EMAIL looks like an email",
-    /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(ownerEmail),
-    ownerEmail || "(unset)",
-  );
-
   record(
     "RESEND_API_KEY is set",
     (process.env.RESEND_API_KEY ?? "").length > 0,

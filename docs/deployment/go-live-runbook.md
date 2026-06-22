@@ -100,7 +100,6 @@ you paste.**
    |----------|-------|
    | `DATABASE_URL` | Neon **pooled** prod string (Phase 1) |
    | `BETTER_AUTH_SECRET` | `openssl rand -base64 32` (a **new** prod secret, not your local one) |
-   | `OWNER_EMAIL` | the email allowed into `/dashboard` |
    | `RESEND_API_KEY` | Resend prod API key (Phase 2) |
    | `MERCADOPAGO_ACCESS_TOKEN` | `APP_USR-…` (Phase 3) |
    | `MERCADOPAGO_WEBHOOK_SECRET` | MP signing secret (Phase 3) |
@@ -123,8 +122,8 @@ you paste.**
    It must print **"All checks passed — clear for launch."** It catches the footguns the
    build can't: TEST credentials, a localhost URL, a missing booking constraint, no salon.
 
-2. **Sign-in smoke test:** go to `/sign-in`, request a magic link with `OWNER_EMAIL`,
-   confirm the email arrives and lands you in `/dashboard`.
+2. **Sign-in smoke test:** go to `/sign-in`, request a magic link with your email,
+   then complete onboarding to create your salon.
 
 3. **End-to-end payment test:** make a real booking from `/book`, pay the deposit, and
    confirm:

@@ -6,7 +6,6 @@ export const env = createEnv({
     DATABASE_URL: z.string().url(),
     // BetterAuth: 32+ char secret used to sign/encrypt sessions & tokens.
     BETTER_AUTH_SECRET: z.string().min(32),
-    OWNER_EMAIL: z.string(),
     // MercadoPago Server Variables
     MERCADOPAGO_ACCESS_TOKEN: z.string(),
     MERCADOPAGO_WEBHOOK_SECRET: z.string().min(1),
