@@ -46,6 +46,10 @@
     --cream: 40 30% 90%;
     --charcoal: 20 14% 4%;
     --charcoal-light: 20 10% 12%;
+
+    /* Motion — stronger than the built-in CSS easings */
+    --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
   }
 
   .dark {
@@ -252,21 +256,43 @@
     }
   }
 
-  /* Hover lift effect */
-  .hover-lift {
-    @apply transition-all duration-300;
-  }
-  .hover-lift:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 20px 40px -15px hsl(var(--gold) / 0.2);
+  /* Hover lift effect — one shared transition so transform AND shadow both ease */
+  .hover-lift,
+  .gold-glow {
+    transition-property: transform, box-shadow, border-color;
+    transition-duration: 300ms;
+    transition-timing-function: var(--ease-out-strong);
   }
 
-  /* Gold border glow on hover */
-  .gold-glow {
-    @apply transition-shadow duration-300;
+  /* Gate hover affordances so a tap on touch devices doesn't leave them stuck */
+  @media (hover: hover) and (pointer: fine) {
+    .hover-lift:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px -15px hsl(var(--gold) / 0.2);
+    }
+    .gold-glow:hover {
+      box-shadow: 0 0 30px -5px hsl(var(--gold) / 0.4);
+    }
   }
-  .gold-glow:hover {
-    box-shadow: 0 0 30px -5px hsl(var(--gold) / 0.4);
+
+  /* Celebratory entrance for one-time success moments — subtle overshoot */
+  .animate-success-pop {
+    animation: success-pop 0.5s var(--ease-out-strong) forwards;
+    opacity: 0;
+  }
+
+  @keyframes success-pop {
+    0% {
+      opacity: 0;
+      transform: scale(0.8);
+    }
+    60% {
+      transform: scale(1.05);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
 }
 
@@ -299,4 +325,23 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--gold) / 0.5);
+}
+
+/* Reduced motion: keep opacity/color cues, drop movement and parallax */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up,
+  .animate-scale-in,
+  .animate-slide-left,
+  .animate-slide-right,
+  .animate-success-pop {
+    animation: fade-in 0.4s ease-out forwards;
+  }
+
+  .hover-lift:hover {
+    transform: none;
+  }
+
+  .stripe-animated {
+    animation: none;
+  }
 }

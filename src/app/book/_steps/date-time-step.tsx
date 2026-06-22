@@ -73,27 +73,44 @@ export function DateTimeStep() {
             </div>
           ) : availableSlots.length > 0 ? (
             <div className="grid grid-cols-3 gap-4">
-              {availableSlots.map((slot) => (
-                <Card
-                  key={slot.time}
-                  className={cn(
-                    "transition-colors",
-                    slot.available
-                      ? "cursor-pointer hover:bg-accent"
-                      : "cursor-not-allowed bg-gray-200",
-                    state.time === slot.time && "border-primary",
-                  )}
-                  onClick={() => {
-                    if (slot.available) {
-                      setState({ time: slot.time });
-                    }
-                  }}
-                >
-                  <CardContent className="p-4 text-center">
-                    <span className="text-sm font-medium">{slot.time}</span>
-                  </CardContent>
-                </Card>
-              ))}
+              {availableSlots.map((slot) => {
+                const isSelected = state.time === slot.time;
+                const select = () => {
+                  if (slot.available) setState({ time: slot.time });
+                };
+
+                return (
+                  <Card
+                    key={slot.time}
+                    role="button"
+                    tabIndex={slot.available ? 0 : -1}
+                    aria-pressed={isSelected}
+                    aria-disabled={!slot.available}
+                    onClick={select}
+                    onKeyDown={(e) => {
+                      if (slot.available && (e.key === "Enter" || e.key === " ")) {
+                        e.preventDefault();
+                        select();
+                      }
+                    }}
+                    className={cn(
+                      "transition-[transform,border-color,background-color,box-shadow] duration-200 ease-out-strong",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                      slot.available
+                        ? "cursor-pointer hover:border-primary/50 hover:bg-secondary/60 active:scale-[0.97]"
+                        : "cursor-not-allowed opacity-40",
+                      isSelected &&
+                        "border-primary bg-primary/10 ring-2 ring-primary/40",
+                    )}
+                  >
+                    <CardContent className="p-4 text-center">
+                      <span className="text-sm font-medium tabular-nums">
+                        {slot.time}
+                      </span>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           ) : (
             <p className="text-center text-muted-foreground">
