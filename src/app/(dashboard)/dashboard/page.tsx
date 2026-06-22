@@ -95,12 +95,14 @@ export default async function DashboardPage() {
             <CardContent>
               <div className="text-2xl font-bold">
                 {String(
-                  Math.round(
-                    services.reduce(
-                      (acc, service) => acc + service.durationMinutes,
-                      0,
-                    ) / services.length,
-                  ),
+                  services.length > 0
+                    ? Math.round(
+                        services.reduce(
+                          (acc, service) => acc + service.durationMinutes,
+                          0,
+                        ) / services.length,
+                      )
+                    : 0,
                 )}
               </div>
               <p className="text-xs text-muted-foreground">Per appointment</p>

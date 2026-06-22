@@ -5,6 +5,20 @@ import { eq } from "drizzle-orm";
 import { getSession } from "@/lib/auth";
 import { pickActiveSalonId } from "@/lib/membership";
 
+export class UnauthorizedError extends Error {
+  constructor() {
+    super("Unauthorized");
+    this.name = "UnauthorizedError";
+  }
+}
+
+export class NoMembershipError extends Error {
+  constructor() {
+    super("No salon membership");
+    this.name = "NoMembershipError";
+  }
+}
+
 /**
  * Resolve the salon the current session acts on, via salon_members.
  * Throws when there is no session or no membership — doubles as an auth gate.
@@ -21,7 +35,7 @@ export async function requireSalonMember(): Promise<{
   const result = await getSession();
   const userId = result?.user?.id;
   if (!userId) {
-    throw new Error("Unauthorized");
+    throw new UnauthorizedError();
   }
 
   const memberships = await db
@@ -31,7 +45,7 @@ export async function requireSalonMember(): Promise<{
 
   const salonId = pickActiveSalonId(memberships);
   if (salonId === null) {
-    throw new Error("No salon membership");
+    throw new NoMembershipError();
   }
 
   const role = memberships.find((m) => m.salonId === salonId)?.role ?? "staff";

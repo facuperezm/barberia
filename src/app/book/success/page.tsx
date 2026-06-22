@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { CalendarCheck, Clock, XCircle, Mail, ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { formatDate, formatTime, toArgentinaDate } from "@/lib/dates";
+import { cn } from "@/lib/utils";
 import { Suspense, useEffect, useState } from "react";
 import { getPublicAppointmentByPublicId } from "@/server/actions/appointments";
 import { bookingResultContent } from "./booking-result";
@@ -125,17 +126,25 @@ function BookingDetails() {
         <div className="space-y-2">
           <div className="flex justify-center">
             <div
-              className={`flex size-12 items-center justify-center rounded-full ${bgClass}`}
+              className={cn(
+                "flex size-12 items-center justify-center rounded-full",
+                bgClass,
+                isCancelled ? "animate-scale-in" : "animate-success-pop",
+              )}
             >
               <Icon className={`size-6 ${iconClass}`} />
             </div>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">{content.title}</h1>
-          <p className="text-muted-foreground">{content.description}</p>
+          <h1 className="animate-fade-up delay-100 text-2xl font-bold tracking-tight">
+            {content.title}
+          </h1>
+          <p className="animate-fade-up delay-200 text-muted-foreground">
+            {content.description}
+          </p>
         </div>
 
         {!isCancelled && (
-          <div className="space-y-4 rounded-lg bg-muted/50 p-6">
+          <div className="animate-fade-up delay-300 space-y-4 rounded-lg bg-muted/50 p-6">
             <div className="space-y-2">
               <p className="text-lg font-medium">{formattedDate}</p>
               <p className="font-semibold text-primary">{formattedTime}</p>
@@ -152,7 +161,7 @@ function BookingDetails() {
           </div>
         )}
 
-        <div className="space-y-4">
+        <div className="animate-fade-up delay-300 space-y-4">
           {!isCancelled && (
             <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
               <Mail className="size-4" />

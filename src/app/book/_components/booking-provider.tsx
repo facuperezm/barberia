@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useCallback } from "react";
 
-interface BookingState {
+export interface BookingState {
   barberId: string;
   serviceId: string;
   date: Date | null;

@@ -73,15 +73,14 @@ export function AppointmentActions({ id, status }: AppointmentActionsProps) {
             Mark as Completed
           </DropdownMenuItem>
         )}
-        {status === "cancelled" ||
-          (status === "completed" && (
-            <DropdownMenuItem
-              onClick={() => updateAppointment({ id, status: "pending" })}
-            >
-              <Clock className="mr-2 size-4 text-yellow-500" />
-              Reopen
-            </DropdownMenuItem>
-          ))}
+        {(status === "cancelled" || status === "completed") && (
+          <DropdownMenuItem
+            onClick={() => updateAppointment({ id, status: "pending" })}
+          >
+            <Clock className="mr-2 size-4 text-yellow-500" />
+            Reopen
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

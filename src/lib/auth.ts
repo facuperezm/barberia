@@ -8,16 +8,18 @@ import { db } from "@/drizzle";
 import { user, session, account, verification } from "@/drizzle/schema";
 import { env } from "@/env";
 import { sendMagicLinkEmail } from "@/lib/email";
-import { isOwnerEmail } from "@/lib/owner";
+import {
+  DEV_TEST_EMAIL,
+  isDevAuthEnabled,
+  captureDevMagicToken,
+} from "@/lib/dev-auth";
 
 /**
  * BetterAuth server instance. Passwordless magic-link only — sign-in links are
  * delivered through the existing Resend setup.
  *
- * Authorization is still single-owner (Phase 0): authentication lets anyone with
- * inbox access establish a session, but only `OWNER_EMAIL` may reach the
- * dashboard or mutate data. See `isOwner()` / `requireOwner()` below. Org-based
- * memberships replace this in the multi-tenant phase.
+ * Authorization is membership-based: a session only grants access to salons the
+ * user belongs to (see `requireSalonMember` in `@/lib/salon-context`).
  */
 export const auth = betterAuth({
   baseURL: env.NEXT_PUBLIC_APP_URL,
@@ -28,7 +30,11 @@ export const auth = betterAuth({
   }),
   plugins: [
     magicLink({
-      sendMagicLink: async ({ email, url }) => {
+      sendMagicLink: async ({ email, url, token }) => {
+        if (isDevAuthEnabled && email === DEV_TEST_EMAIL) {
+          captureDevMagicToken(token);
+          return; // never email the local test account
+        }
         await sendMagicLinkEmail({ email, url });
       },
     }),
@@ -40,19 +46,4 @@ export const auth = betterAuth({
 
 export async function getSession() {
   return auth.api.getSession({ headers: await headers() });
-}
-
-/**
- * True only when the current session belongs to the configured salon owner.
- * This is the authoritative authorization gate for the dashboard.
- */
-export async function isOwner(): Promise<boolean> {
-  const result = await getSession();
-  return isOwnerEmail(result?.user?.email, env.OWNER_EMAIL);
-}
-
-export async function requireOwner(): Promise<void> {
-  if (!(await isOwner())) {
-    throw new Error("Unauthorized");
-  }
 }

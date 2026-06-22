@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { requireSalonMember } from "@/lib/salon-context";
+import { requireSalonMember, NoMembershipError } from "@/lib/salon-context";
 import LayoutLoading from "./_components/layout-loading";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import HeaderNav from "./_components/nav-menu";
@@ -12,11 +12,13 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  let destination: string | null = null;
   try {
     await requireSalonMember();
-  } catch {
-    redirect("/sign-in");
+  } catch (err) {
+    destination = err instanceof NoMembershipError ? "/onboarding" : "/sign-in";
   }
+  if (destination) redirect(destination);
 
   const cookieStore = await cookies();
   const defaultOpen = cookieStore.get("sidebar:state")?.value === "true";

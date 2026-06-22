@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock, MapPin, Scissors, Star, Phone } from "lucide-react";
 import Image from "next/image";
+import { Reveal } from "@/app/_components/reveal";
 
 const features = [
   {
@@ -206,6 +207,7 @@ export default function Home() {
                 src="https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=1200&auto=format&fit=crop&q=80"
                 alt="Master barber at work"
                 fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-cover"
                 priority
               />
@@ -258,19 +260,17 @@ export default function Home() {
             {features.map((feature, index) => {
               const Icon = feature.icon;
               return (
-                <div
-                  key={index}
-                  className="hover-lift gold-glow group rounded border border-border bg-card p-8 transition-all"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  <div className="mb-6 inline-flex h-14 w-14 items-center justify-center rounded border border-amber-500/30 bg-amber-500/10 transition-all group-hover:border-amber-500 group-hover:bg-amber-500">
-                    <Icon className="h-6 w-6 text-amber-500 transition-colors group-hover:text-black" />
+                <Reveal key={index} delay={index * 80}>
+                  <div className="hover-lift gold-glow group h-full rounded border border-border bg-card p-8">
+                    <div className="mb-6 inline-flex h-14 w-14 items-center justify-center rounded border border-amber-500/30 bg-amber-500/10 transition-colors duration-300 group-hover:border-amber-500 group-hover:bg-amber-500">
+                      <Icon className="h-6 w-6 text-amber-500 transition-colors group-hover:text-black" />
+                    </div>
+                    <h3 className="mb-3 font-display text-xl">{feature.title}</h3>
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                      {feature.description}
+                    </p>
                   </div>
-                  <h3 className="mb-3 font-display text-xl">{feature.title}</h3>
-                  <p className="text-sm leading-relaxed text-muted-foreground">
-                    {feature.description}
-                  </p>
-                </div>
+                </Reveal>
               );
             })}
           </div>
@@ -296,8 +296,9 @@ export default function Home() {
 
           <div className="grid gap-8 lg:grid-cols-3">
             {services.map((service, index) => (
-              <div
+              <Reveal
                 key={index}
+                delay={index * 80}
                 className="hover-lift group relative overflow-hidden rounded bg-background"
               >
                 <div className="relative aspect-[4/3] overflow-hidden">
@@ -334,7 +335,7 @@ export default function Home() {
                     </span>
                   </Link>
                 </div>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -359,8 +360,9 @@ export default function Home() {
 
           <div className="grid gap-8 lg:grid-cols-3">
             {testimonials.map((testimonial, index) => (
-              <div
+              <Reveal
                 key={index}
+                delay={index * 80}
                 className="hover-lift rounded border border-border bg-card p-8"
               >
                 <div className="mb-6 flex gap-1">
@@ -385,7 +387,7 @@ export default function Home() {
                     </p>
                   </div>
                 </div>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>

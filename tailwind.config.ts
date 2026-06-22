@@ -2,6 +2,11 @@ import type { Config } from "tailwindcss";
 
 const config: Config = {
   darkMode: ["class"],
+  future: {
+    // Only fire hover styles on devices that truly support hover, so a tap
+    // on touch screens doesn't leave elements stuck in their :hover state.
+    hoverOnlyWhenSupported: true,
+  },
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -75,6 +80,10 @@ const config: Config = {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      transitionTimingFunction: {
+        "out-strong": "var(--ease-out-strong)",
+        "in-out-strong": "var(--ease-in-out-strong)",
       },
     },
   },

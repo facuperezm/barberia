@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { useMemo, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createBookingAction } from "@/server/actions/bookings";
+import { canAdvanceFromStep } from "@/app/book/_components/booking-validation";
 import { cn } from "@/lib/utils";
 import { CheckCircle, Clock, User, Scissors } from "lucide-react";
 
@@ -47,28 +48,10 @@ export function BookingForm() {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
-  const canGoNext = useMemo(() => {
-    switch (step) {
-      case 0:
-        return !!state.barberId;
-      case 1:
-        return !!state.serviceId;
-      case 2:
-        return !!state.date && !!state.time;
-      case 3:
-        return (
-          !!state.customerName && 
-          !!state.customerEmail && 
-          !!state.customerPhone &&
-          // Basic email validation
-          /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.customerEmail) &&
-          // Basic phone validation
-          state.customerPhone.length >= 10
-        );
-      default:
-        return false;
-    }
-  }, [step, state]);
+  const canGoNext = useMemo(
+    () => canAdvanceFromStep(step, state),
+    [step, state],
+  );
 
   const handleSubmit = () => {
     startTransition(async () => {
@@ -160,11 +143,14 @@ export function BookingForm() {
                 >
                   <button
                     onClick={() => index < step && setStep(index)}
-                    disabled={index > step}
+                    disabled={index >= step}
+                    aria-current={isActive ? "step" : undefined}
                     className={cn(
-                      "relative z-10 flex size-10 items-center justify-center rounded-full border-2 transition-colors",
+                      "relative z-10 flex size-10 items-center justify-center rounded-full border-2 transition-[color,background-color,border-color,transform] duration-200 ease-out-strong",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                      "enabled:active:scale-95 disabled:cursor-default",
                       isActive && "border-primary bg-primary text-primary-foreground",
-                      isCompleted && "border-primary bg-primary/10 text-primary",
+                      isCompleted && "cursor-pointer border-primary bg-primary/10 text-primary hover:bg-primary/20",
                       !isActive && !isCompleted && "border-muted-foreground/30 text-muted-foreground"
                     )}
                   >
@@ -192,7 +178,9 @@ export function BookingForm() {
 
       {/* Step Content */}
       <Card className="p-6">
-        <CurrentStep />
+        <div key={step} className="animate-fade-in [animation-duration:300ms]">
+          <CurrentStep />
+        </div>
       </Card>
 
       {/* Navigation */}

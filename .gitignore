@@ -37,3 +37,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .cursorrules
+
+# ai assistant / editor tooling (local scratch)
+.agents/
+.claude/
+.codex/
+.cursor/
+.opencode/
+.superpowers/

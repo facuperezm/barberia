@@ -5,10 +5,37 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getPublicBarbers } from "@/server/actions/barbers";
+import { getPublicServices } from "@/server/queries/services";
+import {
+  EMAIL_REGEX,
+  MIN_NAME_LENGTH,
+  MIN_PHONE_LENGTH,
+} from "@/app/book/_components/booking-validation";
 import { cn } from "@/lib/utils";
 
 export function CustomerStep() {
-  const { state, setState } = useBooking();
+  const { state, setState, salonId } = useBooking();
+
+  // These resolve instantly from the cache populated by the barber/service steps.
+  const { data: barbers } = useQuery({
+    queryKey: ["barbers", "book", salonId],
+    queryFn: () => getPublicBarbers(salonId),
+    staleTime: 1000 * 60 * 10,
+  });
+  const { data: services } = useQuery({
+    queryKey: ["services", "book", salonId],
+    queryFn: () => getPublicServices(salonId),
+    staleTime: 1000 * 60 * 10,
+  });
+
+  const selectedBarber = barbers?.find(
+    (b) => b.id.toString() === state.barberId,
+  );
+  const selectedService = services?.find(
+    (s) => s.id.toString() === state.serviceId,
+  );
   const [touched, setTouched] = useState({
     name: false,
     email: false,
@@ -20,20 +47,20 @@ export function CustomerStep() {
     
     if (touched.name && !state.customerName) {
       errs.name = "Name is required";
-    } else if (touched.name && state.customerName.length < 2) {
-      errs.name = "Name must be at least 2 characters";
+    } else if (touched.name && state.customerName.length < MIN_NAME_LENGTH) {
+      errs.name = `Name must be at least ${MIN_NAME_LENGTH} characters`;
     }
-    
+
     if (touched.email && !state.customerEmail) {
       errs.email = "Email is required";
-    } else if (touched.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.customerEmail)) {
+    } else if (touched.email && !EMAIL_REGEX.test(state.customerEmail)) {
       errs.email = "Please enter a valid email";
     }
-    
+
     if (touched.phone && !state.customerPhone) {
       errs.phone = "Phone number is required";
-    } else if (touched.phone && state.customerPhone.length < 10) {
-      errs.phone = "Phone number must be at least 10 digits";
+    } else if (touched.phone && state.customerPhone.length < MIN_PHONE_LENGTH) {
+      errs.phone = `Phone number must be at least ${MIN_PHONE_LENGTH} digits`;
     }
     
     return errs;
@@ -123,21 +150,34 @@ export function CustomerStep() {
       </div>
 
       <Card className="bg-muted/50 p-4">
-        <h3 className="mb-2 font-medium">Booking Summary</h3>
-        <div className="space-y-1 text-sm">
-          {state.barberId && (
-            <p><span className="text-muted-foreground">Barber:</span> Selected</p>
+        <h3 className="mb-3 font-medium">Booking Summary</h3>
+        <dl className="space-y-2 text-sm">
+          {selectedBarber && (
+            <div className="flex items-center justify-between gap-4">
+              <dt className="text-muted-foreground">Barber</dt>
+              <dd className="font-medium">{selectedBarber.name}</dd>
+            </div>
           )}
-          {state.serviceId && (
-            <p><span className="text-muted-foreground">Service:</span> Selected</p>
+          {selectedService && (
+            <div className="flex items-center justify-between gap-4">
+              <dt className="text-muted-foreground">Service</dt>
+              <dd className="text-right font-medium">
+                {selectedService.name}
+                <span className="ml-2 text-muted-foreground">
+                  ${(selectedService.priceCents / 100).toFixed(2)}
+                </span>
+              </dd>
+            </div>
           )}
           {state.date && state.time && (
-            <p>
-              <span className="text-muted-foreground">Date & Time:</span>{" "}
-              {state.date.toLocaleDateString()} at {state.time}
-            </p>
+            <div className="flex items-center justify-between gap-4">
+              <dt className="text-muted-foreground">Date &amp; Time</dt>
+              <dd className="font-medium">
+                {state.date.toLocaleDateString()} at {state.time}
+              </dd>
+            </div>
           )}
-        </div>
+        </dl>
       </Card>
     </div>
   );
