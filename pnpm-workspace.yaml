@@ -1,2 +1,17 @@
 overrides:
   "esbuild@<=0.24.2": ">=0.25.0"
+  # ReDoS in picomatch via tailwindcss build chain (GHSA-c2c7-rcm5-vvqj).
+  # Two transitive lines: chokidar→anymatch uses 2.x, sucrase→tinyglobby uses 4.x.
+  "picomatch@2": "^2.3.2"
+  "picomatch@4": "^4.0.4"
+  # uuid ReDoS pulled in transitively by mercadopago (only patched in >=11.1.1).
+  "uuid@9": "11.1.1"
+  # postcss ReDoS (GHSA-qx2v-qp2m-jg93) — Next bundles its own pre-8.5.10 copy.
+  "postcss@<8.5.10": ">=8.5.10"
+
+peerDependencyRules:
+  allowedVersions:
+    # better-auth's `better-call` declares a strict zod ^4 peer, but zod 3.25.x
+    # ships the v4 API (`zod/v4`) and better-auth officially supports zod 3.25+.
+    # Allow zod 3 here instead of a disproportionate full zod v4 migration.
+    "better-call>zod": "3"
